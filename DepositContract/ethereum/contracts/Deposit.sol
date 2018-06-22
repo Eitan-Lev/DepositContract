@@ -16,10 +16,15 @@ pragma solidity ^0.4.17;
 contract DepositFactory {
     address[] public deployedDeposits;
 
-    constructor() public {
+    function createDeposit() public {
         address newDeposit = new Deposit(msg.sender);
         deployedDeposits.push(newDeposit);
     }
+    
+    //constructor() public {
+	//address newDeposit = new Deposit(msg.sender);
+	//deployedDeposits.push(newDeposit);
+    //}
 
     function getDeployedDeposits() public view returns (address[]) {
         return deployedDeposits;

@@ -1,7 +1,8 @@
 const assert = require('assert');
 const ganache = require('ganache-cli');
 const Web3 = require('web3');
-const web3 = new Web3(ganache.provider());
+const provider = ganache.provider();
+const web3 = new Web3(provider);
 
 const compiledFactory = require('../ethereum/build/DepositFactory.json');
 const compiledDeposit = require('../ethereum/build/Deposit.json');
@@ -17,29 +18,32 @@ beforeEach(async () => {
   factory = await new web3.eth.Contract(JSON.parse(compiledFactory.interface))
     .deploy({ data: compiledFactory.bytecode })
     .send({ from: accounts[0], gas: '1000000' });
+  factory.setProvider(provider);
 
-  await factory.methods.createCampaign('100').send({
+  await factory.methods.createDeposit().send({
     from: accounts[0],
     gas: '1000000'
   });
 
+  //Fancy way to do const array = await...; campaignAddress = array[0];
   [depositAddress] = await factory.methods.getDeployedDeposits().call();
   deposit = await new web3.eth.Contract(
     JSON.parse(compiledDeposit.interface),
     depositAddress
   );
+  campaign.setProvider(provider);
 });
 
 describe('Deposits', () => {
-  it('deploys a factory and a deposit', () => {
-    assert.ok(factory.options.address);
-    assert.ok(campaign.options.address);
-  });
+  //it('deploys a factory and a deposit', () => {
+    //assert.ok(factory.options.address);
+    //assert.ok(deposit.options.address);
+  //});
 
-  it('marks caller as the deposit manager', async () => {
-    const manager = await deposit.methods.initiator().call();
-    assert.equal(accounts[0], manager);
-  });
+  //it('marks caller as the deposit manager', async () => {
+    //const manager = await deposit.methods.initiator().call();
+    //assert.equal(accounts[0], manager);
+  //});
 
   //it('allows people to contribute money and marks them as approvers', async () => {
     //await campaign.methods.contribute().send({
