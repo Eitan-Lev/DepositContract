@@ -27,55 +27,85 @@ contract DepositFactory {
 }
 
 contract Deposit {
+	//struct State {
+		//int initialBalance[2];
+		//int currentDeposit[2];
+		//int finalBalance[2];
+	//}
 	struct State {
-		mapping(address => uint) initialBalance;
-		mapping(address => uint) currentDeposit;
-		mapping(address => uint) finalBalance;
-		//mapping(address => int) initialBalance;
-		//mapping(address => int) currentDeposit;
-		//mapping(address => int) finalBalance;
+		Balance initialBalance;
+		Balance currentDeposit;
+		Balance finalBalance;
+	}
+	struct Balance {
+		int Initiator;
+		int Counterpart;
 	}
 
-	State state;//TODO weird fucking bug where you can't write public!!!
-	
 	address public initiator;
 	address public counterpart;
 	//TODO find what type
 	//type public sgxPublicSharedKey;
 
+	State public state;
 	bool public isKeySet;
 
 	//TODO not sure about this:
-	//int private initValue = -1;//Default value
-	uint private initValue = (uint)(-1);//Default value assumes no one deposits this much
-	//int private initValue;
+	int private initValue = -1;//Default value
 
 	constructor(address creator) public {
 		initiator = creator;
 		require(msg.value > 0);
+		Balance memory newBalance = Balance({
+			Initiator: initValue,
+			Counterpart: initValue
+		});
 		State memory newState = State();
 		state = newState;
+		state.initialBalance = newBalance;
+		state.currentDeposit = newBalance;
+		state.finalBalance = newBalance;
+		//State memory newState = State({
+			//initialBalance: newBalance,
+			//currentDeposit: newBalance,
+			//finalBalance: newBalance
+		//});
+		//State memory newState = State({
+			//initialBalance: Balance({
+				//Initiator: initValue,
+				//Counterpart: initValue
+			//}),
+			//currentDeposit: Balance({
+				//Initiator: initValue,
+				//Counterpart: initValue
+			//}),
+			//finalBalance: Balance({
+				//Initiator: initValue,
+				//Counterpart: initValue
+			//})
+
+		//});
+		//state = newState;
 		counterpart = 0;
 		isKeySet = false;
-		//initValue = -1;
 	}
 
-	function addDeposit() public payable restricted {
-		if (msg.sender == initiator) {//the initiator adds money
-			state.currentDeposit[initiator] += (msg.value);
-		} else if (state.initialBalance[counterpart] != initValue) {//counterpart adds money the first time
-			state.initialBalance[counterpart] = (msg.value);
-			state.currentDeposit[counterpart] = (msg.value);
-		} else {//counterpart adds aditional money
-			state.currentDeposit[counterpart] += (msg.value);
-		}
-	}
+	//function addDeposit() public payable restricted {
+		//if (msg.sender == initiator) {//The initiator adds money
+			//state.currentDeposit.Initiator += msg.value;
+		//} else if (state.initialBalance.Counterpart != initValue) {//Counterpart adds money the first time
+			//state.initialBalance.Counterpart = msg.value;	
+			//state.currentDeposit.Counterpart = msg.value;
+		//} else {//Counterpart adds aditional money
+			//state.currentDeposit.Counterpart += msg.value;
+		//}
+	//}
 
 	//Restricts accress to initiator and counterpart only.
 	//Allows action only in unlocked state (payment channel not yet closed).
 	modifier restrictedUnlocked() {
+		//require(state.finalBalance.Initiator == initValue && Sate.finalBalance.Counterpart == initValue);//Payment Channel still open
 		require(msg.sender == initiator || msg.sender == counterpart);//Only these 2 are allowed to add money
-		require(state.finalBalance[initiator] == initValue && state.finalBalance[counterpart] == initValue);//Payment Channel still open
 		_;
 	}
 
@@ -95,14 +125,14 @@ contract Deposit {
 		_;
 	}
 
-	//function getCurrentDeposit(address party) public view restrictedUnlocked returns (int) {
-		//return state.currentDeposit[party];
+	//function getCurrentDeposit() public view restrictedUnlocked returns (Balance) {
+		//return state.currentDeposit;
 	//}
 
-	function setCounterpart(address adr) public restrictedInit {
-		require(counterpart == 0);//Initiator cannot change counterpart once set
-		counterpart = adr;
-	}
+	//function setCounterpart(address adr) public restrictedInit {
+		//require(counterpart == 0);//Initiator cannot change counterpart once set
+		//counterpart = adr;
+	//}
 
 	//function setPublicKey(type key) public restrictedUnlocked returns (type) {
 		////TODO not yet implemented
@@ -110,23 +140,23 @@ contract Deposit {
 
 	//function drawMyBalance() public payable restricted {
 		////Reset session before it began
-		//if (state.initialBalance[counterpart] == initValue) {//Validate counterpart has not deposited money yet
-			//require(state.currentDeposit[initiator] >= 0);
-			//initiator.transfer((uint)(state.currentDeposit[initiator]));
-			////reset();//TODO this will not work!!! calling to another function is tricky
+		//if (state.initialBalance.Counterpart == initValue) {//Validate counterpart has not deposited money yet
+			//require(state.currentDeposit.Initiator >= 0);
+			//initiator.transfer(state.currentDeposit.Initiator);
+			//reset();//TODO this will not work!!! calling to another function is tricky
 			//return;//TODO not sure if this works, if not change to "else"
 		//}
 		////After payment channel is active:
-		//require(state.finalBalance[initiator] != initValue && state.finalBalance[counterpart] != initValue);//require end state
+		//require(state.finalBalance.Initiator != initValue && state.finalBalance.Counterpart != initValue);//require end state
 		//if (msg.sender == initiator) {
-			////initiator.transfer(state.finalBalance[initiator]);
-			////state.finalBalance[initiator] = 0;
+			//initiator.transfer(state.finalBalance.Initiator);
+			//state.finalBalance.Initiator = 0;
 		//} else if (msg.sender == counterpart) {
-			////counterpart.transfer(state.finalBalance[counterpart]);
-			////state.finalBalance[counterpart] = 0;
+			//counterpart.transfer(state.finalBalance.Counterpart);
+			//state.finalBalance.Counterpart = 0;
 		//}
-		//if (state.finalBalance[initiator] == 0 && state.finalBalance[counterpart] == 0) {//If both sides drawed, reset contract
-			////reset();//TODO this will not work!!! calling to another function is tricky
+		//if (state.finalBalance.Initiator == 0 && state.finalBalance.Counterpart == 0) {//If both sides drawed, reset contract
+			//reset();//TODO this will not work!!! calling to another function is tricky
 		//}
 	//}
 

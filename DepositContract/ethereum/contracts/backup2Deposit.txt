@@ -31,9 +31,6 @@ contract Deposit {
 		mapping(address => uint) initialBalance;
 		mapping(address => uint) currentDeposit;
 		mapping(address => uint) finalBalance;
-		//mapping(address => int) initialBalance;
-		//mapping(address => int) currentDeposit;
-		//mapping(address => int) finalBalance;
 	}
 
 	State state;//TODO weird fucking bug where you can't write public!!!
@@ -60,16 +57,16 @@ contract Deposit {
 		//initValue = -1;
 	}
 
-	function addDeposit() public payable restricted {
-		if (msg.sender == initiator) {//the initiator adds money
-			state.currentDeposit[initiator] += (msg.value);
-		} else if (state.initialBalance[counterpart] != initValue) {//counterpart adds money the first time
-			state.initialBalance[counterpart] = (msg.value);
-			state.currentDeposit[counterpart] = (msg.value);
-		} else {//counterpart adds aditional money
-			state.currentDeposit[counterpart] += (msg.value);
-		}
-	}
+	//function addDeposit() public payable restricted {
+		//if (msg.sender == initiator) {The initiator adds money
+			//state.currentDeposit[initiator] += (int)(msg.value);
+		//} else if (state.initialBalance[counterpart] != initValue) {Counterpart adds money the first time
+			//state.initialBalance[counterpart] = (int)(msg.value);
+			//state.currentDeposit[counterpart] = (int)(msg.value);
+		//} else {Counterpart adds aditional money
+			//state.currentDeposit[counterpart] += (int)(msg.value);
+		//}
+	//}
 
 	//Restricts accress to initiator and counterpart only.
 	//Allows action only in unlocked state (payment channel not yet closed).
