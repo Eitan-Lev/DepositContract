@@ -29,11 +29,10 @@ contract DepositFactory {
 contract Deposit {
 	struct State {
 		mapping(address => uint) initialBalance;
+		mapping(address => bool) initialBalanceSet;
 		mapping(address => uint) currentDeposit;
 		mapping(address => uint) finalBalance;
-		//mapping(address => int) initialBalance;
-		//mapping(address => int) currentDeposit;
-		//mapping(address => int) finalBalance;
+		mapping(address => bool) finalBalanceSet;
 	}
 
 	State state;//TODO weird fucking bug where you can't write public!!!
@@ -41,31 +40,33 @@ contract Deposit {
 	address public initiator;
 	address public counterpart;
 	//TODO find what type
-	//type public sgxPublicSharedKey;
+	//bytes sgxPublicSharedKey;
 
 	bool public isKeySet;
-
-	//TODO not sure about this:
-	//int private initValue = -1;//Default value
-	uint private initValue = (uint)(-1);//Default value assumes no one deposits this much
-	//int private initValue;
 
 	constructor(address creator) public {
 		initiator = creator;
 		require(msg.value > 0);
 		State memory newState = State();
 		state = newState;
+		//state.initialBalance[initiator] = initValue;
 		counterpart = 0;
 		isKeySet = false;
-		//initValue = -1;
+		//TODO not sure if needed:
+		state.initialBalance[initiator] = 0;
+		state.currentDeposit[initiator] = 0;
+		state.finalBalance[initiator] = 0;
+		state.initialBalanceSet[initiator] = false;
+		state.finalBalanceSet[initiator] = false;
 	}
 
 	function addDeposit() public payable restricted {
 		if (msg.sender == initiator) {//the initiator adds money
 			state.currentDeposit[initiator] += (msg.value);
-		} else if (state.initialBalance[counterpart] != initValue) {//counterpart adds money the first time
+		} else if (state.initialBalanceSet[counterpart] != true) {//counterpart adds money the first time
 			state.initialBalance[counterpart] = (msg.value);
 			state.currentDeposit[counterpart] = (msg.value);
+			state.initialBalanceSet[counterpart] = true;
 		} else {//counterpart adds aditional money
 			state.currentDeposit[counterpart] += (msg.value);
 		}
@@ -75,7 +76,8 @@ contract Deposit {
 	//Allows action only in unlocked state (payment channel not yet closed).
 	modifier restrictedUnlocked() {
 		require(msg.sender == initiator || msg.sender == counterpart);//Only these 2 are allowed to add money
-		require(state.finalBalance[initiator] == initValue && state.finalBalance[counterpart] == initValue);//Payment Channel still open
+		//require(state.finalBalance[initiator] == initValue && state.finalBalance[counterpart] == initValue);//Payment Channel still open
+		require(state.finalBalanceSet[initiator] == false && state.finalBalanceSet[counterpart] == false);//Payment Channel still open
 		_;
 	}
 
@@ -95,63 +97,79 @@ contract Deposit {
 		_;
 	}
 
-	//function getCurrentDeposit(address party) public view restrictedUnlocked returns (int) {
-		//return state.currentDeposit[party];
-	//}
+	function getCurrentDeposit(address party) public view restrictedUnlocked returns (uint) {
+		return state.currentDeposit[party];
+	}
 
 	function setCounterpart(address adr) public restrictedInit {
 		require(counterpart == 0);//Initiator cannot change counterpart once set
 		counterpart = adr;
+		//TODO not sure if needed:
+		state.initialBalance[counterpart] = 0;
+		state.currentDeposit[counterpart] = 0;
+		state.finalBalance[counterpart] = 0;
+		state.initialBalanceSet[counterpart] = false;
+		state.finalBalanceSet[counterpart] = false;
 	}
 
 	//function setPublicKey(type key) public restrictedUnlocked returns (type) {
 		////TODO not yet implemented
 	//}
 
-	//function drawMyBalance() public payable restricted {
-		////Reset session before it began
-		//if (state.initialBalance[counterpart] == initValue) {//Validate counterpart has not deposited money yet
-			//require(state.currentDeposit[initiator] >= 0);
-			//initiator.transfer((uint)(state.currentDeposit[initiator]));
-			////reset();//TODO this will not work!!! calling to another function is tricky
-			//return;//TODO not sure if this works, if not change to "else"
-		//}
-		////After payment channel is active:
-		//require(state.finalBalance[initiator] != initValue && state.finalBalance[counterpart] != initValue);//require end state
-		//if (msg.sender == initiator) {
-			////initiator.transfer(state.finalBalance[initiator]);
-			////state.finalBalance[initiator] = 0;
-		//} else if (msg.sender == counterpart) {
-			////counterpart.transfer(state.finalBalance[counterpart]);
-			////state.finalBalance[counterpart] = 0;
-		//}
-		//if (state.finalBalance[initiator] == 0 && state.finalBalance[counterpart] == 0) {//If both sides drawed, reset contract
-			////reset();//TODO this will not work!!! calling to another function is tricky
-		//}
-	//}
+	function drawMyBalance() public payable restricted {
+		//Reset session before it began
+		if (state.initialBalanceSet[counterpart] == false) {//Validate counterpart has not deposited money yet
+			require(state.initialBalanceSet[initiator] == true);
+			initiator.transfer(state.currentDeposit[initiator]);
+			reset();
+			return;
+		}
+		//After payment channel is active:
+		require(state.finalBalanceSet[initiator] == true && state.finalBalanceSet[counterpart] == true);//require end state
+		if (msg.sender == initiator) {
+			initiator.transfer(state.finalBalance[initiator]);
+			state.finalBalance[initiator] = 0;
+		} else if (msg.sender == counterpart) {
+			counterpart.transfer(state.finalBalance[counterpart]);
+			state.finalBalance[counterpart] = 0;
+		}
+		if (state.finalBalance[initiator] == 0 && state.finalBalance[counterpart] == 0) {//If both sides drawed, reset contract
+			reset();
+		}
+	}
 
-	//function lockPublicSharedKey(type key) public restrictedCounter returns (bool) {
+	//function lockPublicSharedKey(bytes key) public restrictedCounter returns (bool) {
 		//if (key == sgxPublicSharedKey) {
 			//isKeySet = true;
 		//}
 		//return isKeySet;
 	//}
 
-	////Not implemented yet
-	//function terminate(struct SignedFinalstate. public restrictedUnlocked {
-		////TODO validate the SGX signature.
-		////TODO update the final state.
-	//}
+	//Not fully implemented yet
+	//function terminate(uint[2] Totals, byte32 hash, bytes sig) public restrictedUnlocked {
+	function terminate(uint[2] Totals) public restrictedUnlocked {
+		//TODO validate the SGX signature.
+		state.finalBalance[initiator] = Totals[0];
+		state.finalBalance[counterpart] = Totals[1];
+		state.finalBalanceSet[initiator] = true;
+		state.finalBalanceSet[initiator] = true;
+		//TODO update the final state.
+	}
 
-	//function reset() private {
-		//state.initialBalance.Initiator = initValue;
-		//state.initialBalance.Counterpart = initValue;
-		//state.currentDeposit.Initiator = initValue;
-		//state.currentDeposit.Counterpart = initValue;
-		//state.finalBalance.Initiator = initValue;
-		//state.finalBalance.Counterpart = initValue;
-		//counterpart = 0;
-		//isKeySet = false;
-	//}
+	function reset() private {
+		//TODO not sure if needed:
+		state.initialBalance[initiator] = 0;
+		state.initialBalance[counterpart] = 0;
+		state.initialBalanceSet[initiator] = false;
+		state.initialBalanceSet[counterpart] = false;
+		state.currentDeposit[initiator] = 0;
+		state.currentDeposit[counterpart] = 0;
+		state.finalBalance[initiator] = 0;
+		state.finalBalance[counterpart] = 0;
+		state.finalBalanceSet[initiator] = false;
+		state.finalBalanceSet[counterpart] = false;
+		counterpart = 0;
+		isKeySet = false;
+	}
 
 }
