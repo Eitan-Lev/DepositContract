@@ -1,0 +1,27 @@
+Operations:
+npm init
+npm install --save solc	
+npm install --save mocha ganache-cli web3@1.0.0-beta.26
+npm install --save fs-extra
+npm install --save truffle-hdwallet-provider
+------npm run compile.js (maby not true!)
+node compile.js
+npm run test
+node deploy.js (from ethereum dir)
+
+Instructions:
+Work from home directory (not ~/home)
+Do npm init	(Adds package.json).
+Create "ethereum/contracts" directories. (ethereum dir contains all things related to Ethereum).
+In ethereum/contracts --> save Contract.sol (place all solidity code inside)
+In ethereum --> create the files compile.js and deploy.js
+Perform above operations.
+Create "test" directory.
+Edit package.json -> scripts.test: mocha (json way).
+
+
+
+Attempting to deploy from account 0xcF01971DB0CAB2CBeE4A8C21BB7638aC1FA1c38c
+Contract deployed to 0xFa39dd420CCa671AE12730d2A2F3e13B7dC87da0
+
+
