@@ -1,12 +1,12 @@
 {
-  "name": "kickstart",
+  "name": "deposit",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "mocha",
     "dev": "node server.js",
-    "build": "next build"
+    "build": "next build",
+    "start": "node server.js"
   },
   "author": "",
   "license": "ISC",
@@ -20,8 +20,12 @@
     "react-dom": "^16.2.0",
     "semantic-ui-css": "^2.2.12",
     "semantic-ui-react": "^0.77.1",
-    "solc": "^0.4.19",
+    "solc": "^0.4.24",
     "truffle-hdwallet-provider": "0.0.3",
     "web3": "1.0.0-beta.26"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "description": ""
 }

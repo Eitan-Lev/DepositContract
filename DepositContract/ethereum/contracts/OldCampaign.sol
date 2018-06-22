@@ -13,7 +13,15 @@ contract CampaignFactory {
     }
 }
 
-contract Campaign {
+contract Deposit {
+	struct State {
+		uint initialBalance[2];
+		uint currentDeposit[2];
+		uint finalBalance[2];
+	}
+	address initiatorAddress;
+	address counterpartAddress;
+
     struct Request {
         string description;
         uint value;
