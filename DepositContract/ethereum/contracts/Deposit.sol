@@ -20,9 +20,9 @@ contract DepositFactory {
     function createDeposit() public payable {
         require(msg.value >= feeValue, "Not enough money sent.");
         uint initialDeposit;//initialized to 0
-        if (msg.value > feeValue) initialDeposit = msg.value;
+        if (msg.value > feeValue) initialDeposit = msg.value - 1;
         address newDeposit = new Deposit(msg.sender, initialDeposit);
-        newDeposit.transfer(msg.value-1);//1 is fee
+        newDeposit.transfer(initialDeposit);//1 is fee
         deployedDeposits.push(newDeposit);
     }
     
@@ -53,7 +53,7 @@ contract Deposit {
 	//bytes sgxPublicSharedKey;
 
 	bool public isKeySet;
-
+	
 	constructor(address creator, uint initialDeposit) public {
 		initiator = creator;
 		State memory newState = State({
@@ -114,6 +114,13 @@ contract Deposit {
 
 	function viewCurrentDeposit(address party) public view restrictedUnlocked returns (uint) {
 		return state.currentDeposit[party];
+	}
+	
+	function viewCurrentDeposit() public view restrictedUnlocked returns (uint[]) {
+	    uint[] memory balance = new uint[](2);
+        balance[0] = state.currentDeposit[initiator];
+        balance[1] = state.currentDeposit[counterpart];
+        return balance;
 	}
 
 	function setCounterpart(address adr) public restrictedInit {
