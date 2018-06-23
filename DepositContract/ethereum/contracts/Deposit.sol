@@ -15,9 +15,14 @@ pragma solidity ^0.4.17;
 
 contract DepositFactory {
     address[] public deployedDeposits;
-
-    function createDeposit() public {
-        address newDeposit = new Deposit(msg.sender);
+    uint feeValue = 1;
+    
+    function createDeposit() public payable {
+        require(msg.value >= feeValue, "Not enough money sent.");
+        uint initialDeposit;//initialized to 0
+        if (msg.value > feeValue) initialDeposit = msg.value;
+        address newDeposit = new Deposit(msg.sender, initialDeposit);
+        newDeposit.transfer(msg.value-1);//1 is fee
         deployedDeposits.push(newDeposit);
     }
     
@@ -49,20 +54,28 @@ contract Deposit {
 
 	bool public isKeySet;
 
-	constructor(address creator) public {
+	constructor(address creator, uint initialDeposit) public {
 		initiator = creator;
-		require(msg.value > 0);
 		State memory newState = State();
 		state = newState;
 		//state.initialBalance[initiator] = initValue;
 		counterpart = 0;
 		isKeySet = false;
+		state.initialBalance[initiator] = initialDeposit;
+		state.currentDeposit[initiator] = initialDeposit;
+		if (initialDeposit > 0) {
+		    state.initialBalanceSet[initiator] = true;
+		} else {
+		    state.initialBalanceSet[initiator] = false;
+		}
 		//TODO not sure if needed:
-		state.initialBalance[initiator] = 0;
-		state.currentDeposit[initiator] = 0;
-		state.finalBalance[initiator] = 0;
-		state.initialBalanceSet[initiator] = false;
+		state.initialBalance[counterpart] = 0;
+		state.currentDeposit[counterpart] = 0;
+		state.finalBalance[counterpart] = 0;
+		state.finalBalanceSet[counterpart] = false;
+		state.initialBalanceSet[counterpart] = false;
 		state.finalBalanceSet[initiator] = false;
+		state.finalBalance[initiator] = 0;
 	}
 
 	function addDeposit() public payable restricted {
