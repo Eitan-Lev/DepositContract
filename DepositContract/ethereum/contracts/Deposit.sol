@@ -22,6 +22,7 @@ contract DepositFactory {
         uint initialDeposit;//initialized to 0
         if (msg.value > feeValue) initialDeposit = msg.value - 1;
         address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
+        //address newDeposit = new Deposit(msg.sender);
         deployedDeposits.push(newDeposit);
     }
     
@@ -69,11 +70,6 @@ contract Deposit {
 		}
 		state.initialBalance[initiator] = initialDeposit;
 		state.currentDeposit[initiator] = initialDeposit;
-		//if (initialDeposit > 0) {
-		 //   state.initialBalanceSet[initiator] = true;
-		//} else {
-		   // state.initialBalanceSet[initiator] = false;
-		//}
 		//TODO not sure if needed:
 		state.finalBalance[initiator] = 0;
 	}
@@ -81,6 +77,10 @@ contract Deposit {
 	function addDeposit() public payable restricted {
 	    require(msg.value > 0, "Pay more than 0 please.");
 		if (msg.sender == initiator) {//the initiator adds money
+			if (state.initialBalanceSet[initiator] == false) {
+			    state.initialBalanceSet[initiator] = true;
+			    state.initialBalance[initiator] = (msg.value);
+			}
 			state.currentDeposit[initiator] += (msg.value);
 		} else if (state.initialBalanceSet[counterpart] != true) {//counterpart adds money the first time
 			state.initialBalance[counterpart] = (msg.value);
@@ -149,9 +149,10 @@ contract Deposit {
 		//Reset session before it began
 		if (state.initialBalanceSet[counterpart] == false) {//Validate counterpart has not deposited money yet
 			require(state.initialBalanceSet[initiator] == true, "Canno't refund because no money exists.");
-			initiator.transfer(state.currentDeposit[initiator]);
-			reset();
-			return;
+			//initiator.transfer(state.currentDeposit[initiator]);
+			//reset();
+			//return;
+			selfdestruct(initiator);
 		}
 		//After payment channel is active:
 		require(state.finalBalanceSet == true, "Final state was not yet given.");//require end state
@@ -163,7 +164,8 @@ contract Deposit {
 			state.finalBalance[counterpart] = 0;
 		}
 		if (state.finalBalance[initiator] == 0 && state.finalBalance[counterpart] == 0) {//If both sides drawed, reset contract
-			reset();
+			//reset();
+			selfdestruct(initiator);//initiator gets leftovers
 		}
 	}
 
@@ -184,6 +186,7 @@ contract Deposit {
 		//TODO update the final state.
 	}
 
+    //TODO not in usage:
 	function reset() private {
 		//TODO not sure if needed:
 		state.initialBalance[initiator] = 0;
