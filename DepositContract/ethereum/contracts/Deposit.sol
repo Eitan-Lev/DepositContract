@@ -94,8 +94,8 @@ contract Deposit {
 	//Restricts accress to initiator and counterpart only.
 	//Allows action only in unlocked state (payment channel not yet closed).
 	modifier restrictedUnlocked() {
-	    if (msg.sender != initiator) {
-	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
+	    if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
+	        require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
 	    }
 		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
 		//require(state.finalBalance[initiator] == initValue && state.finalBalance[counterpart] == initValue);//Payment Channel still open
@@ -105,8 +105,8 @@ contract Deposit {
 	}
 
 	modifier restricted() {
-	    if (msg.sender != initiator) {
-	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this: restricted");//Only these 2 are allowed to add money
+	    if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
+	        require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restricted");//Only these 2 are allowed to add money
 	    }
 		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
 		_;
