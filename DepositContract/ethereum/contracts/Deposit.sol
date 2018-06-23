@@ -60,9 +60,6 @@ contract Deposit {
 		    finalBalanceSet: false
 		});
 		state = newState;
-		//state.initialBalance[initiator] = initValue;
-		//counterpart = 0;
-		//isKeySet = false;
 		state.initialBalance[initiator] = initialDeposit;
 		state.currentDeposit[initiator] = initialDeposit;
 		if (initialDeposit > 0) {
@@ -71,15 +68,11 @@ contract Deposit {
 		    state.initialBalanceSet[initiator] = false;
 		}
 		//TODO not sure if needed:
-		//state.initialBalance[counterpart] = 0;
-		//state.currentDeposit[counterpart] = 0;
-		//state.finalBalance[counterpart] = 0;
 		state.finalBalance[initiator] = 0;
-		//state.finalBalanceSet[counterpart] = false;
-		//state.initialBalanceSet[counterpart] = false;
 	}
 
 	function addDeposit() public payable restricted {
+	    require(msg.value > 0, "Pay more than 0 please.");
 		if (msg.sender == initiator) {//the initiator adds money
 			state.currentDeposit[initiator] += (msg.value);
 		} else if (state.initialBalanceSet[counterpart] != true) {//counterpart adds money the first time
@@ -97,10 +90,7 @@ contract Deposit {
 	    if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
 	        require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
 	    }
-		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
-		//require(state.finalBalance[initiator] == initValue && state.finalBalance[counterpart] == initValue);//Payment Channel still open
 		require(state.finalBalanceSet == false, "Contract is locked, action not possible: restrictedUnlocked");
-		//require(state.finalBalanceSet[initiator] == false && state.finalBalanceSet[counterpart] == false, "Contract is locked, action not possible.");//Payment Channel still open
 		_;
 	}
 
@@ -108,7 +98,6 @@ contract Deposit {
 	    if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
 	        require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restricted");//Only these 2 are allowed to add money
 	    }
-		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
 		_;
 	}
 
@@ -124,12 +113,12 @@ contract Deposit {
 	}
 
 	function viewCurrentDeposit(address party) public view restrictedUnlocked returns (uint) {
-	//function viewCurrentDeposit(address party) public view returns (uint) {
 		return state.currentDeposit[party];
 	}
 
 	function setCounterpart(address adr) public restrictedInit {
-		require(counterpart == 0);//Initiator cannot change counterpart once set
+		require(counterpart == 0, "Counterpart already set!");//Initiator cannot change counterpart once set
+		require(adr != initiator, "Party is already the initiator");
 		counterpart = adr;
 		//TODO not sure if needed:
 		state.initialBalance[counterpart] = 0;
@@ -145,13 +134,13 @@ contract Deposit {
 	function drawMyBalance() public payable restricted {
 		//Reset session before it began
 		if (state.initialBalanceSet[counterpart] == false) {//Validate counterpart has not deposited money yet
-			require(state.initialBalanceSet[initiator] == true);
+			require(state.initialBalanceSet[initiator] == true, "Canno't refund because no money exists.");
 			initiator.transfer(state.currentDeposit[initiator]);
 			reset();
 			return;
 		}
 		//After payment channel is active:
-		require(state.finalBalanceSet == true);//require end state
+		require(state.finalBalanceSet == true, "Final state was not yet given.");//require end state
 		if (msg.sender == initiator) {
 			initiator.transfer(state.finalBalance[initiator]);
 			state.finalBalance[initiator] = 0;
