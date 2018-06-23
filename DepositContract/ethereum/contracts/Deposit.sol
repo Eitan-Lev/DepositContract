@@ -42,7 +42,7 @@ contract Deposit {
 		mapping(address => bool) initialBalanceSet;
 		mapping(address => uint) currentDeposit;
 		mapping(address => uint) finalBalance;
-		mapping(address => bool) finalBalanceSet;
+		bool finalBalanceSet;
 	}
 
 	State state;//TODO weird fucking bug where you can't write public!!!
@@ -56,7 +56,9 @@ contract Deposit {
 
 	constructor(address creator, uint initialDeposit) public {
 		initiator = creator;
-		State memory newState = State();
+		State memory newState = State({
+		    finalBalanceSet: false
+		});
 		state = newState;
 		//state.initialBalance[initiator] = initValue;
 		//counterpart = 0;
@@ -75,7 +77,6 @@ contract Deposit {
 		state.finalBalance[initiator] = 0;
 		//state.finalBalanceSet[counterpart] = false;
 		//state.initialBalanceSet[counterpart] = false;
-		state.finalBalanceSet[initiator] = false;
 	}
 
 	function addDeposit() public payable restricted {
@@ -94,34 +95,36 @@ contract Deposit {
 	//Allows action only in unlocked state (payment channel not yet closed).
 	modifier restrictedUnlocked() {
 	    if (msg.sender != initiator) {
-	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
+	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
 	    }
 		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
 		//require(state.finalBalance[initiator] == initValue && state.finalBalance[counterpart] == initValue);//Payment Channel still open
-		require(state.finalBalanceSet[initiator] == false && state.finalBalanceSet[counterpart] == false, "Contract is locked, action not possible.");//Payment Channel still open
+		require(state.finalBalanceSet == false, "Contract is locked, action not possible: restrictedUnlocked");
+		//require(state.finalBalanceSet[initiator] == false && state.finalBalanceSet[counterpart] == false, "Contract is locked, action not possible.");//Payment Channel still open
 		_;
 	}
 
 	modifier restricted() {
 	    if (msg.sender != initiator) {
-	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
+	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this: restricted");//Only these 2 are allowed to add money
 	    }
 		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
 		_;
 	}
 
 	modifier restrictedInit() {//Only initiator restriction 
-		require(msg.sender == initiator, "Restricted to initiator only.");
+		require(msg.sender == initiator, "Restricted to initiator only: restrictedInit");
 		_;
 	}
 
 	modifier restrictedCounter() {//Only counterpart restriction 
 		require(counterpart != 0, "Counterpart not yet set.");
-		require(msg.sender == counterpart, "Restricted to counterpart only.");
+		require(msg.sender == counterpart, "Restricted to counterpart only: restrictedCounter");
 		_;
 	}
 
 	function viewCurrentDeposit(address party) public view restrictedUnlocked returns (uint) {
+	//function viewCurrentDeposit(address party) public view returns (uint) {
 		return state.currentDeposit[party];
 	}
 
@@ -133,7 +136,6 @@ contract Deposit {
 		state.currentDeposit[counterpart] = 0;
 		state.finalBalance[counterpart] = 0;
 		state.initialBalanceSet[counterpart] = false;
-		state.finalBalanceSet[counterpart] = false;
 	}
 
 	//function setPublicKey(type key) public restrictedUnlocked returns (type) {
@@ -149,7 +151,7 @@ contract Deposit {
 			return;
 		}
 		//After payment channel is active:
-		require(state.finalBalanceSet[initiator] == true && state.finalBalanceSet[counterpart] == true);//require end state
+		require(state.finalBalanceSet == true);//require end state
 		if (msg.sender == initiator) {
 			initiator.transfer(state.finalBalance[initiator]);
 			state.finalBalance[initiator] = 0;
@@ -175,8 +177,7 @@ contract Deposit {
 		//TODO validate the SGX signature.
 		state.finalBalance[initiator] = Totals[0];
 		state.finalBalance[counterpart] = Totals[1];
-		state.finalBalanceSet[initiator] = true;
-		state.finalBalanceSet[initiator] = true;
+		state.finalBalanceSet = true;
 		//TODO update the final state.
 	}
 
@@ -190,8 +191,7 @@ contract Deposit {
 		state.currentDeposit[counterpart] = 0;
 		state.finalBalance[initiator] = 0;
 		state.finalBalance[counterpart] = 0;
-		state.finalBalanceSet[initiator] = false;
-		state.finalBalanceSet[counterpart] = false;
+		state.finalBalanceSet = false;
 		counterpart = 0;
 		isKeySet = false;
 	}
