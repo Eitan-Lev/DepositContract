@@ -59,8 +59,8 @@ contract Deposit {
 		State memory newState = State();
 		state = newState;
 		//state.initialBalance[initiator] = initValue;
-		counterpart = 0;
-		isKeySet = false;
+		//counterpart = 0;
+		//isKeySet = false;
 		state.initialBalance[initiator] = initialDeposit;
 		state.currentDeposit[initiator] = initialDeposit;
 		if (initialDeposit > 0) {
@@ -69,13 +69,13 @@ contract Deposit {
 		    state.initialBalanceSet[initiator] = false;
 		}
 		//TODO not sure if needed:
-		state.initialBalance[counterpart] = 0;
-		state.currentDeposit[counterpart] = 0;
-		state.finalBalance[counterpart] = 0;
-		state.finalBalanceSet[counterpart] = false;
-		state.initialBalanceSet[counterpart] = false;
-		state.finalBalanceSet[initiator] = false;
+		//state.initialBalance[counterpart] = 0;
+		//state.currentDeposit[counterpart] = 0;
+		//state.finalBalance[counterpart] = 0;
 		state.finalBalance[initiator] = 0;
+		//state.finalBalanceSet[counterpart] = false;
+		//state.initialBalanceSet[counterpart] = false;
+		state.finalBalanceSet[initiator] = false;
 	}
 
 	function addDeposit() public payable restricted {
@@ -93,29 +93,35 @@ contract Deposit {
 	//Restricts accress to initiator and counterpart only.
 	//Allows action only in unlocked state (payment channel not yet closed).
 	modifier restrictedUnlocked() {
-		require(msg.sender == initiator || msg.sender == counterpart);//Only these 2 are allowed to add money
+	    if (msg.sender != initiator) {
+	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
+	    }
+		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
 		//require(state.finalBalance[initiator] == initValue && state.finalBalance[counterpart] == initValue);//Payment Channel still open
-		require(state.finalBalanceSet[initiator] == false && state.finalBalanceSet[counterpart] == false);//Payment Channel still open
+		require(state.finalBalanceSet[initiator] == false && state.finalBalanceSet[counterpart] == false, "Contract is locked, action not possible.");//Payment Channel still open
 		_;
 	}
 
 	modifier restricted() {
-		require(msg.sender == initiator || msg.sender == counterpart);//Only these 2 are allowed to add money
+	    if (msg.sender != initiator) {
+	        require(msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
+	    }
+		//require(msg.sender == initiator || msg.sender == counterpart, "Only invlolved parties are allowed to perform this.");//Only these 2 are allowed to add money
 		_;
 	}
 
 	modifier restrictedInit() {//Only initiator restriction 
-		require(msg.sender == initiator);
+		require(msg.sender == initiator, "Restricted to initiator only.");
 		_;
 	}
 
 	modifier restrictedCounter() {//Only counterpart restriction 
-		require(counterpart != 0);
-		require(msg.sender == counterpart);
+		require(counterpart != 0, "Counterpart not yet set.");
+		require(msg.sender == counterpart, "Restricted to counterpart only.");
 		_;
 	}
 
-	function getCurrentDeposit(address party) public view restrictedUnlocked returns (uint) {
+	function viewCurrentDeposit(address party) public view restrictedUnlocked returns (uint) {
 		return state.currentDeposit[party];
 	}
 
