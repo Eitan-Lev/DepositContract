@@ -21,8 +21,7 @@ contract DepositFactory {
         require(msg.value >= feeValue, "Not enough money sent.");
         uint initialDeposit;//initialized to 0
         if (msg.value > feeValue) initialDeposit = msg.value - 1;
-        address newDeposit = new Deposit(msg.sender, initialDeposit);
-        newDeposit.transfer(initialDeposit);//1 is fee
+        address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
         deployedDeposits.push(newDeposit);
     }
     
@@ -54,19 +53,27 @@ contract Deposit {
 
 	bool public isKeySet;
 	
-	constructor(address creator, uint initialDeposit) public {
+	//constructor(address creator, uint initialDeposit) public payable {
+	constructor(address creator) public payable {
 		initiator = creator;
 		State memory newState = State({
 		    finalBalanceSet: false
 		});
 		state = newState;
-		state.initialBalance[initiator] = initialDeposit;
-		state.currentDeposit[initiator] = initialDeposit;
-		if (initialDeposit > 0) {
+		uint initialDeposit;
+		if (msg.value > 0) {
+		    initialDeposit = msg.value;
 		    state.initialBalanceSet[initiator] = true;
 		} else {
 		    state.initialBalanceSet[initiator] = false;
 		}
+		state.initialBalance[initiator] = initialDeposit;
+		state.currentDeposit[initiator] = initialDeposit;
+		//if (initialDeposit > 0) {
+		 //   state.initialBalanceSet[initiator] = true;
+		//} else {
+		   // state.initialBalanceSet[initiator] = false;
+		//}
 		//TODO not sure if needed:
 		state.finalBalance[initiator] = 0;
 	}
