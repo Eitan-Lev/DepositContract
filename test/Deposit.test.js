@@ -14,19 +14,27 @@ let factory;
 let depositAddress;
 let deposit;
 
+// Runs before each test
 beforeEach(async () => {
+  // console.log('see.. this function is run EACH time');
   accounts = await web3.eth.getAccounts();
 
   factory = await new web3.eth.Contract(JSON.parse(compiledFactory.interface))
     .deploy({ data: compiledFactory.bytecode })
-    .send({ from: accounts[0], gas: '1000000' });
+    .send({ from: accounts[0], gas: '3000000' });
   factory.setProvider(provider);
 
-  // Using the factory method "createDrposit" to create a new deposit
+  // Not sure why - but these two lines solve the factory issue. TODO understand
+  // and apply these changes
+  factory.options.gasPrice = '20000000000000'; // default gas price in wei
+  factory.options.gas = 5000000; // provide as fallback always 5M gas
+
+  // Using the factory's method "createDrposit" to create a new deposit
   // contract
   await factory.methods.createDeposit().send({
     from: accounts[0],
-    gas: '1000000'
+    gas: '3000000',
+    value: '1'
   });
 
   //Fancy way to do const array = await...; depositAddress = array[0];
@@ -35,7 +43,7 @@ beforeEach(async () => {
     JSON.parse(compiledDeposit.interface),
     depositAddress
   );
-  campaign.setProvider(provider);
+  //campaign.setProvider(provider); TODO campaign??
 });
 
 describe('Deposits', () => {
@@ -44,10 +52,10 @@ describe('Deposits', () => {
     assert.ok(deposit.options.address);
   });
 
-  //it('marks caller as the deposit manager', async () => {
-    //const manager = await deposit.methods.initiator().call();
-    //assert.equal(accounts[0], manager);
-  //});
+  it('marks caller as the deposit manager', async () => {
+    const manager = await deposit.methods.initiator().call();
+    assert.equal(accounts[0], manager);
+  });
 
   //it('allows people to contribute money and marks them as approvers', async () => {
     //await campaign.methods.contribute().send({

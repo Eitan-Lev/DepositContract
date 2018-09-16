@@ -1,7 +1,7 @@
 Operations:
 npm init
 npm install --save solc	
-npm install --save mocha ganache-cli web3@1.0.0-beta.26
+npm install --save mocha ganache-cli web3@1.0.0-beta.26 //Should be beta.35 according to newer video
 npm install --save fs-extra
 npm install --save truffle-hdwallet-provider
 ------npm run compile.js (maby not true!)
