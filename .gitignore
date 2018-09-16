@@ -1,0 +1,11 @@
+# exclude everything except what we specifically say (work as white list)
+/*
+
+# Whitelisted folders and files
+!README.md
+!EnvironmentOps.txt
+!.gitignore
+!/test
+!/pages
+!/ethereum
+!/components

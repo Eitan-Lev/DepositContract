@@ -17,7 +17,7 @@ const output = solc.compile(source, 1).contracts;//Compile source code
 //console.log(solc.compile(source, 1).contracts);
 
 //console.log("3");
-fs.ensureDirSync(buildPath);
+fs.ensureDirSync(buildPath); //Creates the build folder if it doesn't exist
 
 for (let contract in output) {
   fs.outputJsonSync(
