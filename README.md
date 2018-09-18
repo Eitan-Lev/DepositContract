@@ -1,3 +1,2 @@
-# DepositContract
-# DepositContract
-# DepositContract
+# Smart Contract for Payment Channels over Ethereum
+
