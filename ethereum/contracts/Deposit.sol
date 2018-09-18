@@ -5,7 +5,7 @@ contract DepositFactory {
     mapping(address => address) deployedDeposits;//Contract => creator
     uint feeValue = 1;
     
-    function createDeposit() public payable {
+    function createDeposit() public payable returns (address) {
         require(msg.value >= feeValue, "Not enough money sent.");
         uint initialDeposit;//initialized to 0
         if (msg.value > feeValue) initialDeposit = msg.value - 1;
