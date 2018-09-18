@@ -1,30 +1,36 @@
 pragma solidity ^0.4.17;
 
 contract DepositFactory {
-    //address[] public deployedDeposits;
-    mapping(address => address) deployedDeposits;//Contract => creator
+    mapping(address => address) public depositsCreators;//Contract => creator
+    mapping(address => address[]) public deployedDeposits;//creator => Contract
     uint feeValue = 1;
     
-    function createDeposit() public payable returns (address) {
+    function createDeposit() public payable {
         require(msg.value >= feeValue, "Not enough money sent.");
         uint initialDeposit;//initialized to 0
         if (msg.value > feeValue) initialDeposit = msg.value - 1;
         address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
-        //deployedDeposits.push(newDeposit);
-	deployedDeposits[newDeposit] = msg.sender;
-	return newDeposit;
+	//deployedDepositsArray.push(newDeposit);
+	(deployedDeposits[msg.sender]).push(newDeposit);
+	depositsCreators[newDeposit] = msg.sender;
+	//return newDeposit;
     }
     
     //function getDeployedDeposits() public view returns (address[]) {
-	//return deployedDeposits;
+	//return deployedDepositsArray;
     //}
 
-    function getDeployedDepositCreator(address depositContract) public view returns (address) {
-	    return deployedDeposits[depositContract];//returns 0x000... if contract does not exist
+    function getDepositContract(address creator) public view returns (address[]) {
+	return deployedDeposits[creator];
+    }
+
+    function getDepositContractCreator(address depositContract) public view returns (address) {
+	    return depositsCreators[depositContract];//returns 0x000... if contract does not exist
     }
 
     function removeDeposit() public {
-	    delete deployedDeposits[msg.sender];//Only relevant if sent by a contract, so need to restrict
+	    delete deployedDeposits[(depositsCreators[msg.sender])];//Only relevant if sent by a contract, so need to restrict
+	    delete depositsCreators[msg.sender];//Only relevant if sent by a contract, so need to restrict
     }
 }
 

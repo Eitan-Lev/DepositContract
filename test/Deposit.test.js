@@ -13,11 +13,13 @@ let accounts;
 let factory;
 let depositAddress;
 let deposit;
+let initiator;
 
 // Runs before each test
 beforeEach(async () => {
   // console.log('see.. this function is run EACH time');
   accounts = await web3.eth.getAccounts();
+  initiator = accounts[0];
 
   factory = await new web3.eth.Contract(JSON.parse(compiledFactory.interface))
     .deploy({ data: compiledFactory.bytecode })
@@ -29,16 +31,17 @@ beforeEach(async () => {
   factory.options.gasPrice = '20000000000000'; // default gas price in wei
   factory.options.gas = 5000000; // provide as fallback always 5M gas
 
-  // Using the factory's method "createDrposit" to create a new deposit
+  // Using the factory's method "createDeposit" to create a new deposit
   // contract
   await factory.methods.createDeposit().send({
-    from: accounts[0],
+    from: initiator,
     gas: '3000000',
     value: '1'
   });
 
   //Fancy way to do const array = await...; depositAddress = array[0];
-  [depositAddress] = await factory.methods.getDeployedDeposits().call();
+  [depositAddress] = await factory.methods.getDepositContract(initiator).call();
+  //[depositAddress] = await factory.methods.getDeployedDeposits().call();
   deposit = await new web3.eth.Contract(
     JSON.parse(compiledDeposit.interface),
     depositAddress
