@@ -1,20 +1,8 @@
 pragma solidity ^0.4.17;
 
-//contract MainDepositsFactories {
-    //address[] public deployedDepositFactories;
-
-    //constructor() public {
-        //address newDepositFactory = new DepositFactory(msg.sender);
-        //deployedDepositFactories.push(newDepositFactory);
-    //}
-
-    //function getDeployedDepositFactories() public view returns (address[]) {
-        //return deployedDepositFactories;
-    //}
-//}
-
 contract DepositFactory {
-    address[] public deployedDeposits;
+    //address[] public deployedDeposits;
+    mapping(address => address) deployedDeposits;//Contract => creator
     uint feeValue = 1;
     
     function createDeposit() public payable {
@@ -22,17 +10,21 @@ contract DepositFactory {
         uint initialDeposit;//initialized to 0
         if (msg.value > feeValue) initialDeposit = msg.value - 1;
         address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
-        //address newDeposit = new Deposit(msg.sender);
-        deployedDeposits.push(newDeposit);
+        //deployedDeposits.push(newDeposit);
+	deployedDeposits[newDeposit] = msg.sender;
+	return newDeposit;
     }
     
-    //constructor() public {
-	//address newDeposit = new Deposit(msg.sender);
-	//deployedDeposits.push(newDeposit);
+    //function getDeployedDeposits() public view returns (address[]) {
+	//return deployedDeposits;
     //}
 
-    function getDeployedDeposits() public view returns (address[]) {
-        return deployedDeposits;
+    function getDeployedDepositCreator(address depositContract) public view returns (address) {
+	    return deployedDeposits[depositContract];//returns 0x000... if contract does not exist
+    }
+
+    function removeDeposit() public {
+	    delete deployedDeposits[msg.sender];//Only relevant if sent by a contract, so need to restrict
     }
 }
 
@@ -46,7 +38,8 @@ contract Deposit {
 	}
 
 	State state;//TODO weird fucking bug where you can't write public!!!
-	
+
+	DepositFactory public factory;//Saves the factory address for self termination state
 	address public initiator;
 	address public counterpart;
 	//TODO find what type
@@ -56,6 +49,7 @@ contract Deposit {
 	
 	//constructor(address creator, uint initialDeposit) public payable {
 	constructor(address creator) public payable {
+		factory = DepositFactory(msg.sender);
 		initiator = creator;
 		State memory newState = State({
 		    finalBalanceSet: false
@@ -149,9 +143,7 @@ contract Deposit {
 		//Reset session before it began
 		if (state.initialBalanceSet[counterpart] == false) {//Validate counterpart has not deposited money yet
 			require(state.initialBalanceSet[initiator] == true, "Canno't refund because no money exists.");
-			//initiator.transfer(state.currentDeposit[initiator]);
-			//reset();
-			//return;
+			factory.removeDeposit();
 			selfdestruct(initiator);
 		}
 		//After payment channel is active:
@@ -165,6 +157,7 @@ contract Deposit {
 		}
 		if (state.finalBalance[initiator] == 0 && state.finalBalance[counterpart] == 0) {//If both sides drawed, reset contract
 			//reset();
+			factory.removeDeposit();
 			selfdestruct(initiator);//initiator gets leftovers
 		}
 	}
@@ -178,7 +171,7 @@ contract Deposit {
 
 	//Not fully implemented yet
 	//function terminate(uint[2] Totals, byte32 hash, bytes sig) public restrictedUnlocked {
-	function terminate(uint[2] Totals) public restrictedUnlocked {
+	function terminatePaymentChannel(uint[2] Totals) public restrictedUnlocked {
 		//TODO validate the SGX signature.
 		state.finalBalance[initiator] = Totals[0];
 		state.finalBalance[counterpart] = Totals[1];
