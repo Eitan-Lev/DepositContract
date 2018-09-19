@@ -1,37 +1,44 @@
 pragma solidity ^0.4.17;
 
 contract DepositFactory {
-    mapping(address => address) public depositsCreators;//Contract => creator
-    mapping(address => address[]) public deployedDeposits;//creator => Contract
-    uint feeValue = 1;
+	mapping(address => address) public depositsCreators;//Contract => creator
+	mapping(address => address[]) public deployedDeposits;//creator => Contract
+	//Using mappings means we can't know simply how many contracts exist.
+	//Also, there is no way to iterate over all contracts.
+	//Two mappings required. 
+	//Creator => Contract because creator has to know somehow what is the address of hes contracts.
+	//Contract => Creator to be able to destroy.
+	uint feeValue = 1;
+
+	function createDeposit() public payable {
+		require(msg.value >= feeValue, "Not enough money sent.");
+		uint initialDeposit;//initialized to 0
+		if (msg.value > feeValue) initialDeposit = msg.value - 1;
+		address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
+		//deployedDepositsArray.push(newDeposit);
+		(deployedDeposits[msg.sender]).push(newDeposit);
+		depositsCreators[newDeposit] = msg.sender;
+		//return newDeposit;
+		//Don't return anything since it's payable, which does not go well with return values
+	}
     
-    function createDeposit() public payable {
-        require(msg.value >= feeValue, "Not enough money sent.");
-        uint initialDeposit;//initialized to 0
-        if (msg.value > feeValue) initialDeposit = msg.value - 1;
-        address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
-	//deployedDepositsArray.push(newDeposit);
-	(deployedDeposits[msg.sender]).push(newDeposit);
-	depositsCreators[newDeposit] = msg.sender;
-	//return newDeposit;
-    }
-    
-    //function getDeployedDeposits() public view returns (address[]) {
-	//return deployedDepositsArray;
-    //}
+	//function getDeployedDeposits() public view returns (address[]) {
+		//return deployedDepositsArray;
+	//}
 
-    function getDepositContract(address creator) public view returns (address[]) {
-	return deployedDeposits[creator];
-    }
+	function getDepositContract(address creator) public view returns (address[]) {
+		return deployedDeposits[creator];//returns 0x000... if creator does not exist
+	}
 
-    function getDepositContractCreator(address depositContract) public view returns (address) {
-	    return depositsCreators[depositContract];//returns 0x000... if contract does not exist
-    }
+	function getDepositContractCreator(address depositContract) public view returns (address) {
+		return depositsCreators[depositContract];//returns 0x000... if contract does not exist
+	}
 
-    function removeDeposit() public {
-	    delete deployedDeposits[(depositsCreators[msg.sender])];//Only relevant if sent by a contract, so need to restrict
-	    delete depositsCreators[msg.sender];//Only relevant if sent by a contract, so need to restrict
-    }
+	function removeDeposit() public {
+		//Currently the remove causes all contracts of a creator to be removed (undesired behaviour)
+		delete deployedDeposits[(depositsCreators[msg.sender])];//Only relevant if sent by a contract, so need to restrict
+		delete depositsCreators[msg.sender];//Only relevant if sent by a contract, so need to restrict
+	}
 }
 
 contract Deposit {
@@ -53,20 +60,19 @@ contract Deposit {
 
 	bool public isKeySet;
 	
-	//constructor(address creator, uint initialDeposit) public payable {
 	constructor(address creator) public payable {
 		factory = DepositFactory(msg.sender);
 		initiator = creator;
 		State memory newState = State({
-		    finalBalanceSet: false
+			finalBalanceSet: false
 		});
 		state = newState;
 		uint initialDeposit;
 		if (msg.value > 0) {
-		    initialDeposit = msg.value;
-		    state.initialBalanceSet[initiator] = true;
+			initialDeposit = msg.value;
+			state.initialBalanceSet[initiator] = true;
 		} else {
-		    state.initialBalanceSet[initiator] = false;
+			state.initialBalanceSet[initiator] = false;
 		}
 		state.initialBalance[initiator] = initialDeposit;
 		state.currentDeposit[initiator] = initialDeposit;
@@ -75,11 +81,11 @@ contract Deposit {
 	}
 
 	function addDeposit() public payable restricted {
-	    require(msg.value > 0, "Pay more than 0 please.");
+		require(msg.value > 0, "Pay more than 0 please.");
 		if (msg.sender == initiator) {//the initiator adds money
 			if (state.initialBalanceSet[initiator] == false) {
-			    state.initialBalanceSet[initiator] = true;
-			    state.initialBalance[initiator] = (msg.value);
+				state.initialBalanceSet[initiator] = true;
+				state.initialBalance[initiator] = (msg.value);
 			}
 			state.currentDeposit[initiator] += (msg.value);
 		} else if (state.initialBalanceSet[counterpart] != true) {//counterpart adds money the first time
@@ -94,17 +100,17 @@ contract Deposit {
 	//Restricts accress to initiator and counterpart only.
 	//Allows action only in unlocked state (payment channel not yet closed).
 	modifier restrictedUnlocked() {
-	    if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
-	        require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
-	    }
+		if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
+			require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
+		}
 		require(state.finalBalanceSet == false, "Contract is locked, action not possible: restrictedUnlocked");
 		_;
 	}
 
 	modifier restricted() {
-	    if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
-	        require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restricted");//Only these 2 are allowed to add money
-	    }
+		if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
+			require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restricted");//Only these 2 are allowed to add money
+		}
 		_;
 	}
 
@@ -124,10 +130,10 @@ contract Deposit {
 	}
 	
 	function viewCurrentDeposit() public view restrictedUnlocked returns (uint[]) {
-	    uint[] memory balance = new uint[](2);
-        balance[0] = state.currentDeposit[initiator];
-        balance[1] = state.currentDeposit[counterpart];
-        return balance;
+		uint[] memory balance = new uint[](2);
+		balance[0] = state.currentDeposit[initiator];
+		balance[1] = state.currentDeposit[counterpart];
+		return balance;
 	}
 
 	function setCounterpart(address adr) public restrictedInit {
@@ -184,21 +190,4 @@ contract Deposit {
 		state.finalBalanceSet = true;
 		//TODO update the final state.
 	}
-
-    //TODO not in usage:
-	function reset() private {
-		//TODO not sure if needed:
-		state.initialBalance[initiator] = 0;
-		state.initialBalance[counterpart] = 0;
-		state.initialBalanceSet[initiator] = false;
-		state.initialBalanceSet[counterpart] = false;
-		state.currentDeposit[initiator] = 0;
-		state.currentDeposit[counterpart] = 0;
-		state.finalBalance[initiator] = 0;
-		state.finalBalance[counterpart] = 0;
-		state.finalBalanceSet = false;
-		counterpart = 0;
-		isKeySet = false;
-	}
-
 }

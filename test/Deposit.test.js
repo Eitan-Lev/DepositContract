@@ -4,18 +4,31 @@ const ganache = require('ganache-cli');
 const Web3 = require('web3');
 const provider = ganache.provider();
 const web3 = new Web3(provider);
-const INIT_VALUE = 1;
-const FEE_VALUE = 1;
+
+// Importing additional functions
+const testHelper = require('../helpers/test-helper');
 
 // Importing the contracts
 const compiledFactory = require('../ethereum/build/DepositFactory.json');
 const compiledDeposit = require('../ethereum/build/Deposit.json');
+
+// Constants:
+const RESTRICTED_INITIATOR_ONLY = "VM Exception while processing transaction: revert Restricted to initiator only: restrictedInit";
+const RESTRICTED_COUNTERPART_ONLY = "VM Exception while processing transaction: revert Restricted to counterpart only: restrictedCounter";
+const RESTRICTED_COUNTERPART_IS_INITIATOR = "VM Exception while processing transaction: revert Party is already the initiator";
+const RESTRICTED_COUNTERPART_ALREADY_SET = "";
+const RESTRICTED_COUNTERPART_NOT_YET_SET = "";
+const RESTRICTED_CONTRACT_IS_LOCKED = "";
+const RESTRICTED_ONLY_INVOLVED_PARTIES = "";
+const INIT_VALUE = 1;
+const FEE_VALUE = 1;
 
 let accounts;
 let factory;
 let depositAddress;
 let deposit;
 let initiator;
+let counterpart;
 
 // Runs before each test
 beforeEach(async () => {
@@ -23,10 +36,12 @@ beforeEach(async () => {
   accounts = await web3.eth.getAccounts();
   initialValue = INIT_VALUE;
   initiator = accounts[0];
+  counterpart = accounts[1];
+  attacker = accounts[2];
 
   factory = await new web3.eth.Contract(JSON.parse(compiledFactory.interface))
     .deploy({ data: compiledFactory.bytecode })
-    .send({ from: accounts[0], gas: '3000000' });
+    .send({ from: initiator, gas: '3000000' });
   factory.setProvider(provider);
 
   // Not sure why - but these two lines solve the factory issue. TODO understand
@@ -71,7 +86,7 @@ describe('Deposits', () => {
 
 	it('validate initial values upon creation', async () => {
 		const isKeySet = await deposit.methods.isKeySet().call();
-		assert.equal(false, isKeySet, "Key should be false upon creation");
+		assert(!isKeySet, "Key should be false upon creation");
 		const counterpart = await deposit.methods.counterpart().call();
 		assert.equal(0, counterpart, "Counterpart should not be set yet");
 		const initiatorInitialDeposit = await deposit.methods.viewCurrentDeposit(initiator).call();
@@ -80,6 +95,20 @@ describe('Deposits', () => {
 		assert.equal(initiatorCurrentDeposit, initialValue, "viewCurrentDeposit without parameters should return the initiator current deposited also");
 		assert.equal(counterpartCurrentDeposit, 0, "counterpart not set, current deposit should be 0");
 	});
+
+	it('validate restriction modifiers upon creation', async () => {
+		try {
+			await deposit.methods.setCounterpart(initiator).call({ from: attacker });
+		} catch (error) {
+			testHelper.testRestrictionModifier(error, RESTRICTED_INITIATOR_ONLY);
+		}
+		try {
+			await deposit.methods.setCounterpart(initiator).call({ from: initiator });
+		} catch (error) {
+			testHelper.testRestrictionModifier(error, RESTRICTED_COUNTERPART_IS_INITIATOR);
+		}
+	});
+	
   //it('allows people to contribute money and marks them as approvers', async () => {
     //await campaign.methods.contribute().send({
       //value: '200',
