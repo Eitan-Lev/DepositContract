@@ -23,7 +23,7 @@ const RESTRICTED_ONLY_INVOLVED_PARTIES = "";
 const INIT_VALUE = 1;
 const FEE_VALUE = 1;
 
-let accounts;
+//let accounts;
 let factory;
 let depositAddress;
 let deposit;
@@ -33,11 +33,12 @@ let counterpart;
 // Runs before each test
 beforeEach(async () => {
   // console.log('see.. this function is run EACH time');
-  accounts = await web3.eth.getAccounts();
+  //accounts = await web3.eth.getAccounts();
+  [initiator, counterpart, attacker] = await web3.eth.getAccounts();
   initialValue = INIT_VALUE;
-  initiator = accounts[0];
-  counterpart = accounts[1];
-  attacker = accounts[2];
+  //initiator = accounts[0];
+  //counterpart = accounts[1];
+  //attacker = accounts[2];
 
   factory = await new web3.eth.Contract(JSON.parse(compiledFactory.interface))
     .deploy({ data: compiledFactory.bytecode })
