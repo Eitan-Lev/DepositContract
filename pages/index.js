@@ -7,6 +7,7 @@ import { Link } from '../routes';
 class CampaignIndex extends Component {
   static async getInitialProps() {
     const campaigns = await factory.methods.getDeployedCampaigns().call();
+    //FIXME 2 issues- no such function, and no way to know accounts
 
     return { campaigns };
   }
