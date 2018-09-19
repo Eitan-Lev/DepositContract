@@ -1,0 +1,35 @@
+{
+  "name": "depositcontract",
+  "version": "1.0.0",
+  "description": "* EnviormentOps contains the instructions for building the environment after pulling the repository. There is no need to do these steps more than once on each computer. * Do not save any private keys on this repository.",
+  "main": "routes.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha",
+    "start": "node server.js",
+    "dev": "next dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eitan-Lev/DepositContract.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Eitan-Lev/DepositContract/issues"
+  },
+  "homepage": "https://github.com/Eitan-Lev/DepositContract#readme",
+  "dependencies": {
+    "fs-extra": "^7.0.0",
+    "ganache-cli": "^6.1.8",
+    "mocha": "^5.2.0",
+    "next": "^4.1.4",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
+    "solc": "^0.4.25",
+    "truffle": "^4.1.14",
+    "web3": "^1.0.0-beta.35"
+  }
+}
