@@ -51,19 +51,14 @@ contract Deposit {
 		PaymentChannelLocked,
 		Finished
 	}
-	// This is the current Stage:
-	//Stage public stage = Stage.InitialStage;
 
 	struct State {
 		mapping(address => uint) initialBalance;
-		mapping(address => bool) initialBalanceSet;
 		mapping(address => uint) currentDeposit;
 		mapping(address => uint) finalBalance;
 		bool finalBalanceSet;
 		Stage stage;// This is the current Stage
-		//Stage stage = Stage.InitialStage;// This is the current Stage
 	}
-
 	State state;//TODO weird fucking bug where you can't write public!!!
 
 	DepositFactory public factory;//Saves the factory address for self termination state
@@ -86,8 +81,6 @@ contract Deposit {
 		if (msg.value > 0) {
 			initialDeposit = msg.value;
 			state.stage = Stage.NoCounterpart;
-		} else {
-			//state.initialBalanceSet[initiator] = false;
 		}
 		state.initialBalance[initiator] = initialDeposit;
 		state.currentDeposit[initiator] = initialDeposit;
@@ -95,20 +88,13 @@ contract Deposit {
 		state.finalBalance[initiator] = 0;
 	}
 
-	function addDeposit() public payable restricted {
+	function addDeposit() public payable restricted restrictedUnlocked {
 		require(msg.value > 0, "Pay more than 0 please.");
 		if (msg.sender == initiator) {//the initiator adds money
-			//if (state.initialBalanceSet[initiator] == false) {
-			//if (state.initialBalanceSet[initiator] == false) {
-				//state.initialBalanceSet[initiator] = true;
-				////state.initialBalance[initiator] = (msg.value);
-			//}
 			state.currentDeposit[initiator] += (msg.value);
-		//} else if (state.initialBalanceSet[counterpart] != true) {//counterpart adds money the first time
 		} else if (atStage(Stage.CounterpartSet)) {//counterpart adds money the first time
 			state.initialBalance[counterpart] = (msg.value);
 			state.currentDeposit[counterpart] = (msg.value);
-			//state.initialBalanceSet[counterpart] = true;
 			nextStage();
 		} else {//counterpart adds aditional money
 			state.currentDeposit[counterpart] += (msg.value);
@@ -121,9 +107,6 @@ contract Deposit {
 		if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
 			require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
 		}
-		//require(state.finalBalanceSet == false, "Contract is locked, action not possible: restrictedUnlocked");
-		//require(state.stage <= Stage.PaymentChannelLocked, "Contract is locked, action not possible: restrictedUnlocked");
-		//require(state.stage <= Stage.PaymentChannelLocked, "Contract is locked, action not possible: restrictedUnlocked");
 		require(beforeStage(Stage.PaymentChannelLocked), "Contract is locked, action not possible: restrictedUnlocked");
 		_;
 	}
@@ -190,60 +173,43 @@ contract Deposit {
 	}
 
 	function setCounterpart(address adr) public restrictedInit verifyAtStage(Stage.NoCounterpart) transitionNext {
-	//function setCounterpart(address adr) public restrictedInit {
-		//require(counterpart == 0, "Counterpart already set!");
 		require(adr != initiator, "Party is already the initiator");
 		counterpart = adr;
 		//TODO not sure if needed:
 		state.initialBalance[counterpart] = 0;
 		state.currentDeposit[counterpart] = 0;
 		state.finalBalance[counterpart] = 0;
-		//state.initialBalanceSet[counterpart] = false;
 	}
 
 	//function setPublicKey(type key) public restrictedUnlocked returns (type) {
 		////TODO not yet implemented
 	//}
 
-	//function verifyStage(Stage _stage) internal view returns (bool) {
 	function atStage(Stage _stage) internal view returns (bool) {
 		return (state.stage == _stage);
 	}
 
-	//function verifyBetweenStages(Stage endStage, Stage beginStage = Stage.InitialStage) internal view returns (bool) {
-	//function verifyBeforeStage(Stage endStage) internal view returns (bool) {
 	function beforeStage(Stage endStage) internal view returns (bool) {
 		assert(endStage != Stage.Finished);
 		Stage newEndStage = Stage(uint(endStage) + 1);
 		return betweenStages(Stage.InitialStage, newEndStage);
-		//return verifyBetweenStages(Stage.InitialStage, newEndStage);
 	}
 
-	//function verifyBetweenStages(Stage beginStage, Stage endStage) internal view returns (bool) {
 	function betweenStages(Stage beginStage, Stage endStage) internal view returns (bool) {
 		uint endStageInt = uint(endStage);
 		uint beginStageInt = uint(beginStage);
 		uint stage = uint(state.stage);
 		return ((stage <= endStageInt) && (stage >= beginStageInt));
-		//return ((state.stage <= endStage) && (stage.stage >= beginStage));
 	}
 
-	function cancelDepositContract() public verifyAtStage(Stage.InitialStage) {
+	function cancelDepositContract() public restricted verifyAtStage(Stage.InitialStage) {
 		//Reset session before it began
 		factory.removeDeposit();
 		selfdestruct(initiator);
 	}
 
 	function drawMyBalance() public payable restricted verifyAtStage(Stage.PaymentChannelLocked) {
-		////Reset session before it began
-		//if (atStage(Stage.InitialStage)) {//Validate counterpart has not deposited money yet
-			//require(state.initialBalanceSet[initiator] == true, "Canno't refund because no money exists.");
-			//factory.removeDeposit();
-			//selfdestruct(initiator);
-		//}
 		//After payment channel is active:
-		//require(atStage(Stage.PaymentChannelOpen), "Final state was not yet given.");//require end state
-		//require(state.finalBalanceSet == true, "Final state was not yet given.");//require end state
 		if (msg.sender == initiator) {
 			initiator.transfer(state.finalBalance[initiator]);
 			state.finalBalance[initiator] = 0;
@@ -265,8 +231,7 @@ contract Deposit {
 	//}
 
 	//Not fully implemented yet
-	//function terminate(uint[2] Totals, byte32 hash, bytes sig) public restrictedUnlocked {
-	function terminatePaymentChannel(uint[2] Totals) public restrictedUnlocked {
+	function setFinalState(uint[2] Totals) public restrictedUnlocked {
 		//TODO validate the SGX signature.
 		state.finalBalance[initiator] = Totals[0];
 		state.finalBalance[counterpart] = Totals[1];
