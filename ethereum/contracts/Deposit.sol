@@ -42,12 +42,26 @@ contract DepositFactory {
 }
 
 contract Deposit {
+	enum Stage {
+		InitialStage,
+		NoCounterpart,
+		CounterpartSet,
+		CounterpartDepositSet,
+		PaymentChannelOpen,
+		PaymentChannelLocked,
+		Finished
+	}
+	// This is the current Stage:
+	//Stage public stage = Stage.InitialStage;
+
 	struct State {
 		mapping(address => uint) initialBalance;
 		mapping(address => bool) initialBalanceSet;
 		mapping(address => uint) currentDeposit;
 		mapping(address => uint) finalBalance;
 		bool finalBalanceSet;
+		Stage stage;// This is the current Stage
+		//Stage stage = Stage.InitialStage;// This is the current Stage
 	}
 
 	State state;//TODO weird fucking bug where you can't write public!!!
@@ -64,15 +78,16 @@ contract Deposit {
 		factory = DepositFactory(msg.sender);
 		initiator = creator;
 		State memory newState = State({
-			finalBalanceSet: false
+			finalBalanceSet: false,
+			stage: Stage.InitialStage
 		});
 		state = newState;
-		uint initialDeposit;
+		uint initialDeposit = 0;
 		if (msg.value > 0) {
 			initialDeposit = msg.value;
-			state.initialBalanceSet[initiator] = true;
+			state.stage = Stage.NoCounterpart;
 		} else {
-			state.initialBalanceSet[initiator] = false;
+			//state.initialBalanceSet[initiator] = false;
 		}
 		state.initialBalance[initiator] = initialDeposit;
 		state.currentDeposit[initiator] = initialDeposit;
@@ -83,15 +98,18 @@ contract Deposit {
 	function addDeposit() public payable restricted {
 		require(msg.value > 0, "Pay more than 0 please.");
 		if (msg.sender == initiator) {//the initiator adds money
-			if (state.initialBalanceSet[initiator] == false) {
-				state.initialBalanceSet[initiator] = true;
-				state.initialBalance[initiator] = (msg.value);
-			}
+			//if (state.initialBalanceSet[initiator] == false) {
+			//if (state.initialBalanceSet[initiator] == false) {
+				//state.initialBalanceSet[initiator] = true;
+				////state.initialBalance[initiator] = (msg.value);
+			//}
 			state.currentDeposit[initiator] += (msg.value);
-		} else if (state.initialBalanceSet[counterpart] != true) {//counterpart adds money the first time
+		//} else if (state.initialBalanceSet[counterpart] != true) {//counterpart adds money the first time
+		} else if (atStage(Stage.CounterpartSet)) {//counterpart adds money the first time
 			state.initialBalance[counterpart] = (msg.value);
 			state.currentDeposit[counterpart] = (msg.value);
-			state.initialBalanceSet[counterpart] = true;
+			//state.initialBalanceSet[counterpart] = true;
+			nextStage();
 		} else {//counterpart adds aditional money
 			state.currentDeposit[counterpart] += (msg.value);
 		}
@@ -103,7 +121,10 @@ contract Deposit {
 		if (msg.sender != initiator) {//If  counterpart not yet set, following require is always true
 			require(msg.sender == counterpart && counterpart != 0, "Only invlolved parties are allowed to perform this: restrictedUnlocked");//Only these 2 are allowed to add money
 		}
-		require(state.finalBalanceSet == false, "Contract is locked, action not possible: restrictedUnlocked");
+		//require(state.finalBalanceSet == false, "Contract is locked, action not possible: restrictedUnlocked");
+		//require(state.stage <= Stage.PaymentChannelLocked, "Contract is locked, action not possible: restrictedUnlocked");
+		//require(state.stage <= Stage.PaymentChannelLocked, "Contract is locked, action not possible: restrictedUnlocked");
+		require(beforeStage(Stage.PaymentChannelLocked), "Contract is locked, action not possible: restrictedUnlocked");
 		_;
 	}
 
@@ -125,6 +146,38 @@ contract Deposit {
 		_;
 	}
 
+	function nextStage() internal {
+		assert(state.stage != Stage.Finished);
+		state.stage = Stage(uint(state.stage) + 1);
+	}
+
+	function getErrorMsgAccordingToStage(Stage _stage) internal pure returns (string) {
+		if (_stage == Stage.InitialStage) {
+			//return "Party is already the initiator";
+			return "";
+		} else if (_stage == Stage.CounterpartSet) {
+			return "Counterpart already set!";
+		} else if (_stage == Stage.CounterpartDepositSet) {
+			return "";
+		} else if (_stage == Stage.PaymentChannelOpen) {
+			return "";
+		} else if (_stage == Stage.PaymentChannelLocked) {
+			return "Final state was not yet given";
+		} else if (_stage == Stage.Finished) {
+			return "";
+		}
+	}
+
+	modifier verifyAtStage(Stage _stage) {//Only counterpart restriction 
+		require(atStage(_stage), getErrorMsgAccordingToStage(_stage));
+		_;
+	}
+
+	modifier transitionNext() {//Only counterpart restriction 
+		_;
+		nextStage();
+	}
+
 	function viewCurrentDeposit(address party) public view restrictedUnlocked returns (uint) {
 		return state.currentDeposit[party];
 	}
@@ -136,30 +189,61 @@ contract Deposit {
 		return balance;
 	}
 
-	function setCounterpart(address adr) public restrictedInit {
-		require(counterpart == 0, "Counterpart already set!");//Initiator cannot change counterpart once set
+	function setCounterpart(address adr) public restrictedInit verifyAtStage(Stage.NoCounterpart) transitionNext {
+	//function setCounterpart(address adr) public restrictedInit {
+		//require(counterpart == 0, "Counterpart already set!");
 		require(adr != initiator, "Party is already the initiator");
 		counterpart = adr;
 		//TODO not sure if needed:
 		state.initialBalance[counterpart] = 0;
 		state.currentDeposit[counterpart] = 0;
 		state.finalBalance[counterpart] = 0;
-		state.initialBalanceSet[counterpart] = false;
+		//state.initialBalanceSet[counterpart] = false;
 	}
 
 	//function setPublicKey(type key) public restrictedUnlocked returns (type) {
 		////TODO not yet implemented
 	//}
 
-	function drawMyBalance() public payable restricted {
+	//function verifyStage(Stage _stage) internal view returns (bool) {
+	function atStage(Stage _stage) internal view returns (bool) {
+		return (state.stage == _stage);
+	}
+
+	//function verifyBetweenStages(Stage endStage, Stage beginStage = Stage.InitialStage) internal view returns (bool) {
+	//function verifyBeforeStage(Stage endStage) internal view returns (bool) {
+	function beforeStage(Stage endStage) internal view returns (bool) {
+		assert(endStage != Stage.Finished);
+		Stage newEndStage = Stage(uint(endStage) + 1);
+		return betweenStages(Stage.InitialStage, newEndStage);
+		//return verifyBetweenStages(Stage.InitialStage, newEndStage);
+	}
+
+	//function verifyBetweenStages(Stage beginStage, Stage endStage) internal view returns (bool) {
+	function betweenStages(Stage beginStage, Stage endStage) internal view returns (bool) {
+		uint endStageInt = uint(endStage);
+		uint beginStageInt = uint(beginStage);
+		uint stage = uint(state.stage);
+		return ((stage <= endStageInt) && (stage >= beginStageInt));
+		//return ((state.stage <= endStage) && (stage.stage >= beginStage));
+	}
+
+	function cancelDepositContract() public verifyAtStage(Stage.InitialStage) {
 		//Reset session before it began
-		if (state.initialBalanceSet[counterpart] == false) {//Validate counterpart has not deposited money yet
-			require(state.initialBalanceSet[initiator] == true, "Canno't refund because no money exists.");
-			factory.removeDeposit();
-			selfdestruct(initiator);
-		}
+		factory.removeDeposit();
+		selfdestruct(initiator);
+	}
+
+	function drawMyBalance() public payable restricted verifyAtStage(Stage.PaymentChannelLocked) {
+		////Reset session before it began
+		//if (atStage(Stage.InitialStage)) {//Validate counterpart has not deposited money yet
+			//require(state.initialBalanceSet[initiator] == true, "Canno't refund because no money exists.");
+			//factory.removeDeposit();
+			//selfdestruct(initiator);
+		//}
 		//After payment channel is active:
-		require(state.finalBalanceSet == true, "Final state was not yet given.");//require end state
+		//require(atStage(Stage.PaymentChannelOpen), "Final state was not yet given.");//require end state
+		//require(state.finalBalanceSet == true, "Final state was not yet given.");//require end state
 		if (msg.sender == initiator) {
 			initiator.transfer(state.finalBalance[initiator]);
 			state.finalBalance[initiator] = 0;
@@ -168,7 +252,6 @@ contract Deposit {
 			state.finalBalance[counterpart] = 0;
 		}
 		if (state.finalBalance[initiator] == 0 && state.finalBalance[counterpart] == 0) {//If both sides drawed, reset contract
-			//reset();
 			factory.removeDeposit();
 			selfdestruct(initiator);//initiator gets leftovers
 		}
@@ -187,7 +270,7 @@ contract Deposit {
 		//TODO validate the SGX signature.
 		state.finalBalance[initiator] = Totals[0];
 		state.finalBalance[counterpart] = Totals[1];
-		state.finalBalanceSet = true;
+		state.stage = Stage.PaymentChannelLocked;
 		//TODO update the final state.
 	}
 }
