@@ -13,7 +13,8 @@ const compiledFactory = require('../ethereum/build/DepositFactory.json');
 const compiledDeposit = require('../ethereum/build/Deposit.json');
 
 // Constants:
-const RESTRICTED_INITIATOR_ONLY = "VM Exception while processing transaction: revert Restricted to initiator only: restrictedInit";
+//const RESTRICTED_INITIATOR_ONLY = "VM Exception while processing transaction: revert Restricted to initiator only: restrictedInit";
+const RESTRICTED_INITIATOR_ONLY = "VM Exception while processing transaction: revert You lack permissions for this action";
 const RESTRICTED_COUNTERPART_ONLY = "VM Exception while processing transaction: revert Restricted to counterpart only: restrictedCounter";
 const RESTRICTED_COUNTERPART_IS_INITIATOR = "VM Exception while processing transaction: revert Party is already the initiator";
 const RESTRICTED_COUNTERPART_ALREADY_SET = "";
@@ -29,12 +30,14 @@ let depositAddress;
 let deposit;
 let initiator;
 let counterpart;
+let attacker;
+let SgxAddress;
 
 // Runs before each test
 beforeEach(async () => {
   // console.log('see.. this function is run EACH time');
   //accounts = await web3.eth.getAccounts();
-  [initiator, counterpart, attacker] = await web3.eth.getAccounts();
+  [initiator, counterpart, attacker, SgxAddress] = await web3.eth.getAccounts();
   initialValue = INIT_VALUE;
   //initiator = accounts[0];
   //counterpart = accounts[1];
@@ -108,8 +111,51 @@ describe('Deposits', () => {
 		} catch (error) {
 			testHelper.testRestrictionModifier(error, RESTRICTED_COUNTERPART_IS_INITIATOR);
 		}
+		let res
+		await deposit.methods.setCounterpart(counterpart).send({ 
+			from: initiator,
+			gas: '1000000'
+		});
+		res = await deposit.methods.counterpart().call();
+		assert.equal(res, counterpart, "Counterpart wasn't set correctly");
 	});
 	
+	it('check that key works', async () => {
+		await deposit.methods.setCounterpart(counterpart).send({ 
+			from: initiator,
+			gas: '1000000'
+		});
+		await deposit.methods.setPublicKey(SgxAddress).send({ 
+			from: initiator,
+			gas: '1000000'
+		});
+		let isKeySet;
+		let res;
+		isKeySet = await deposit.methods.lockPublicSharedKey(SgxAddress).send({ 
+			from: counterpart,
+			gas: '1000000'
+		});
+		assert(isKeySet, "Key was not set correctly");
+		//let signature = testHelper.getSignature(web3, SgxAddress, "asdsd");//FIXME change random string
+		//signature = signature.substr(2); //remove 0x
+		//const r = '0x' + signature.slice(0, 64);
+		//const s = '0x' + signature.slice(64, 128);
+		//const v = '0x' + signature.slice(128, 130);
+		//const v_decimal = web3.toDecimal(v);
+		//let aDeposit = 4;
+		//let bDeposit = 4;
+		//let Totals = [aDeposit, bDeposit];
+		//res = await deposit.methods.setFinalState(
+				//Totals,
+				//v_decimal,
+				//r,
+				//s
+				//).send({ 
+			//from: counterpart,
+			//gas: '1000000'
+		//});
+	});
+
   //it('allows people to contribute money and marks them as approvers', async () => {
     //await campaign.methods.contribute().send({
       //value: '200',
