@@ -119,10 +119,12 @@ contract Deposit {
 		_;
 	}
 
-	modifier isSigned(uint[2] Totals, uint8 v, bytes32 r, bytes32 s) 
+	//modifier isSigned(uint[2] Totals, uint8 v, bytes32 r, bytes32 s) 
+	modifier isSigned(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s) 
 	{
-		bytes memory total = abi.encodePacked(Totals);
-		bytes32 msgHash = keccak256(total);
+		require(sha3(Totals) == TotalsBytes, "Sha3 of totals does not match given Sha3");
+		bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+		bytes32 msgHash = keccak256(abi.encodePacked(prefix, TotalsBytes));
 		require(ecrecover(msgHash, v, r, s) == SgxAddress, "Verify signature failed");
 		_;
 	}
@@ -158,7 +160,6 @@ contract Deposit {
 
 	modifier verifyAtStage(Stage _stage) {
 		require(atStage(_stage), getErrorMsgAccordingToStage(state.stage));
-		//require(atStage(_stage), getErrorMsgAccordingToStage(_stage));
 		_;
 	}
 
@@ -272,14 +273,16 @@ contract Deposit {
 		return isKeySet;
 	}
 
-	function setFinalState(uint[2] Totals, uint8 v, bytes32 r, bytes32 s)
+	//function setFinalState(uint[2] Totals, uint8 v, bytes32 r, bytes32 s)
+	function setFinalState(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s)
 		public 
 		restricted 
 		verifyAtStage(Stage.PaymentChannelOpen) 
-		isSigned(Totals, v, r, s)
+		isSigned(Totals, TotalsBytes, v, r, s)
+		//isSigned(Totals, v, r, s)
 		transitionNext 
 	{
-		state.finalBalance[initiator] = Totals[0];
-		state.finalBalance[counterpart] = Totals[1];
+		state.finalBalance[initiator] = uint(Totals[0]);
+		state.finalBalance[counterpart] = uint(Totals[1]);
 	}
 }

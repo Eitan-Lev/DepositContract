@@ -51,10 +51,27 @@ module.exports = {
 			assert(false);
 		}
 	},
+	toV_Decimal(v) {
+		if (isVersionOne) {
+			const v_decimal = this.hexToNumber(v) + 27;
+			assert(v_decimal == 27 || v_decimal == 28, "v_decimal is not 27 or 28");
+			return v_decimal;
+		} else {
+			assert(false);
+		}
+	},
 	getSignature(addr, msg) {
-		msgHex = this.toHex(msg);
+		//msgHex = this.toHex(msg);
+		msgHex = web3.utils.keccak256(msg);
 		if (isVersionOne) {
 			return web3.eth.sign('0x' + msgHex, addr);
+		} else {
+			assert(false);
+		}
+	},
+	isHexStrict(hex) {
+		if (isVersionOne) {
+			return web3.utils.isHexStrict(hex);
 		} else {
 			assert(false);
 		}

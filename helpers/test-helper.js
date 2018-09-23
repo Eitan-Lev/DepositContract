@@ -38,11 +38,12 @@ module.exports = {
 			//});
 		//return res;
 	//},
-	async setFinalState(Totals, v_decimal, r, s, account) {
-		res = await deposit.methods.setFinalState(Totals, v_decimal, r, s)
+	//async setFinalState(Totals, v_decimal, r, s, account) {
+	async setFinalState(Totals, TotalsBytes, v_decimal, r, s, account) {
+		res = await deposit.methods.setFinalState(Totals, TotalsBytes, v_decimal, r, s)
 			.send({
 				from: account,
-				gas: '1000000'
+				gas: '2000000'
 			});
 		return res;
 	}
