@@ -134,7 +134,6 @@ contract Deposit {
 		state.stage = Stage(uint(_stage) + 1);
 		require(state.stage != Stage.Finished, "Assert fails");
 		assert(uint(state.stage) <= uint(Stage.Finished));
-		//state.stage = Stage(uint(state.stage) + 1);
 	}
 
 	function getErrorMsgAccordingToStage(Stage _stage) internal pure returns (string) {

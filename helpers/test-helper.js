@@ -1,6 +1,17 @@
 const assert = require('assert');
 
+let deposit;
+let factory;
+let web3Helper;
+
 module.exports = {
+	//FIXME
+	// Don't use yet. Does not work for some reason.
+	initTestHelper(_factory, _deposit, _web3Helper) {
+		factory = _factory;
+		deposit = _deposit;
+		web3Helper = _web3Helper;
+	},
 	ifUsingTestRPC(err) {
 		//Make sure this is a throw we expect.
 		if (err.message.indexOf('VM Exception while processing transaction: out of gas') == 0
@@ -19,18 +30,20 @@ module.exports = {
 			assert.equal(err.message, restrictionMessage);
 		}
 	},
-	toHex(str) {
-		var hex = '';
-		for (var i = 0; i < str.length; i++) {
-			hex += '' + str.charCodeAt(i).toString(16);
-		}
-		return hex;
-	},
-	getSignature(web3, addr, msg) {
-		msgHex = this.toHex(msg);
-		console.log("reached here");
-		let signature = web3.eth.sign(addr, '0x' + msgHex);
-		console.log("reached here 2");
-		return signature;
+	//async setFinalState(deposit, Totals, v_decimal, r, s, account) {
+		//res = await deposit.methods.setFinalState(Totals, v_decimal, r, s)
+			//.send({
+				//from: account,
+				//gas: '1000000'
+			//});
+		//return res;
+	//},
+	async setFinalState(Totals, v_decimal, r, s, account) {
+		res = await deposit.methods.setFinalState(Totals, v_decimal, r, s)
+			.send({
+				from: account,
+				gas: '1000000'
+			});
+		return res;
 	}
 }
