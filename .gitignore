@@ -7,7 +7,10 @@
 !.gitignore
 !/test
 !/pages
-!/ethereum
 !/components
 !/helpers
 !package.json
+
+# Allow contracts to be tracked but not .json files of them
+!/ethereum
+/ethereum/build

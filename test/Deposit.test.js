@@ -5,7 +5,7 @@ const assert = require('assert');
 //const provider = ganache.provider();
 //const web3 = new Web3(provider);//TODO under trial
 const web3Helper = require('../helpers/web3-helper');
-const ethUtil = require('ethereumjs-util');//FIXME under trial
+//const ethUtil = require('ethereumjs-util');//FIXME under trial
 
 
 // Importing additional functions
@@ -115,26 +115,26 @@ describe('Deposits', () => {
 			testHelper.testRestrictionModifier(error, RESTRICTED_COUNTERPART_IS_INITIATOR);
 		}
 		let res
-		await deposit.methods.setCounterpart(counterpart).send({ 
+		await deposit.methods.setCounterpart(counterpart).send({
 			from: initiator,
 			gas: '1000000'
 		});
 		res = await deposit.methods.counterpart().call();
 		assert.equal(res, counterpart, "Counterpart wasn't set correctly");
 	});
-	
+
 	it('check that key works', async () => {
-		await deposit.methods.setCounterpart(counterpart).send({ 
+		await deposit.methods.setCounterpart(counterpart).send({
 			from: initiator,
 			gas: '1000000'
 		});
-		await deposit.methods.setPublicKey(SgxAddress).send({ 
+		await deposit.methods.setPublicKey(SgxAddress).send({
 			from: initiator,
 			gas: '1000000'
 		});
 		let isKeySet;
 		let res;
-		isKeySet = await deposit.methods.lockPublicSharedKey(SgxAddress).send({ 
+		isKeySet = await deposit.methods.lockPublicSharedKey(SgxAddress).send({
 			from: counterpart,
 			gas: '1000000'
 		});
