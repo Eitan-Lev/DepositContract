@@ -76,34 +76,57 @@ beforeEach(async () => {
 	testHelper.initTestHelper(factory, deposit, web3Helper);
 });
 
-describe('Deposits', () => {
-	it('deploys a factory and a deposit', () => {
+describe('Basic deployment of contracts', () => {
+	it('deploys a factory and a deposit contract', () => {
 		assert.ok(factory.options.address);
 		assert.ok(deposit.options.address);
 	});
 
-	it('marks caller as the deposit manager', async () => {
+	it('saves contract in factory\'s deployed contracts', async () => {
+		assert.equal(depositAddress, await factory.methods.deployedDeposits(initiator,0).call());
+	});
+});
+
+describe('Deposit contract values after creation', () => {
+	it('marks caller to factory as the deposit manager', async () => {
 		const manager = await deposit.methods.initiator().call();
 		assert.equal(initiator, manager);
 	});
 
-	it('validate contract was deployed', async () => {
-		assert.equal(depositAddress, await factory.methods.deployedDeposits(initiator,0).call());
-	});
-
-	it('validate initial values upon creation', async () => {
+	it('sets correct initial values upon creation', async () => {
 		const isKeySet = await deposit.methods.isKeySet().call();
-		assert(!isKeySet, "Key should be false upon creation");
+		assert(!isKeySet, "isKeySet should be false upon creation");
+
 		const counterpart = await deposit.methods.counterpart().call();
 		assert.equal(0, counterpart, "Counterpart should not be set yet");
+
 		const initiatorInitialDeposit = await deposit.methods.viewCurrentDeposit(initiator).call();
 		assert.equal(initiatorInitialDeposit, initialValue, "Initial value should be equal to amount sent to creation minus the fee");
+
 		[initiatorCurrentDeposit, counterpartCurrentDeposit] = await deposit.methods.viewCurrentDeposit().call();
 		assert.equal(initiatorCurrentDeposit, initialValue, "viewCurrentDeposit without parameters should return the initiator current deposited also");
 		assert.equal(counterpartCurrentDeposit, 0, "counterpart not set, current deposit should be 0");
+
+		const initialSgxAddress = await deposit.methods.SgxAddress().call();
+		assert.equal(0, initialSgxAddress, "SgxAddress should not be set yet");
+
+		const factoryAddress = await deposit.methods.factory().call();
+		assert.equal(factoryAddress, factory.options.address, "Factory addresses does not match!");
 	});
 
-	it('validate restriction modifiers upon creation', async () => {
+	it('sets correct initial values for the state', async () => {
+		const initialInitialState = await deposit.methods.state().call();
+		const initialFinalBalanceSet = initialInitialState['finalBalanceSet'];
+		const initialStage = initialInitialState['stage'];
+		assert.equal(initialFinalBalanceSet, false, "FinalBalanceSet should be false!");
+		assert.equal(initialStage, 1, "Stage should be 1 after constructor!");
+		//Note that the mappings in state are not checked directly
+		const initialCurrentDeposits = await deposit.methods.viewCurrentDeposit().call();
+		assert.equal(initialCurrentDeposits[0], INIT_VALUE, "Initiator current deposit should be INIT_VALUE!");
+		assert.equal(initialCurrentDeposits[1], 0, "Counterpart current deposit should be 0!");
+	});
+
+	it('creates restriction modifiers correctly', async () => {
 		try {
 			await deposit.methods.setCounterpart(initiator).call({ from: attacker });
 		} catch (error) {
@@ -122,7 +145,20 @@ describe('Deposits', () => {
 		res = await deposit.methods.counterpart().call();
 		assert.equal(res, counterpart, "Counterpart wasn't set correctly");
 	});
+});
 
+// describe('Basic behavior of Deposit contract', () => {
+// 	it('enables the initiator to cancel the contract', async () => {
+// 		try {
+// 			await deposit.methods.cancelDepositContract().call({ from: initiator});
+// 		} catch (error) {
+// 			console.log('Error: ' + error);
+// 			assert(false, "Can't cancel the deposit contract");
+// 		}
+// 	});
+// });
+
+describe('Test keys', () => {
 	it('check that key works', async () => {
 		await deposit.methods.setCounterpart(counterpart).send({
 			from: initiator,
@@ -159,7 +195,7 @@ describe('Deposits', () => {
 			assert(false, error);
 		}
 	});
-
+});
   //it('allows people to contribute money and marks them as approvers', async () => {
     //await campaign.methods.contribute().send({
       //value: '200',
@@ -219,4 +255,3 @@ describe('Deposits', () => {
 
     //assert(balance > 104);
   //});
-});

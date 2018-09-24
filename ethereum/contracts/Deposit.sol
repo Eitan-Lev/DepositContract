@@ -308,6 +308,7 @@ contract Deposit {
 		return ((stage <= endStageInt) && (stage >= beginStageInt));
 	} */
 
+<<<<<<< HEAD
 	/**
 	 * cancelDepositContract
 	 * Allows (only!) the initator to cancel the contract. This action is allowed
@@ -315,6 +316,21 @@ contract Deposit {
 	 */
 	function cancelDepositContract() public restrictedAccess(Party.Initiator)
 		verifyAtStage(Stage.InitialStage)	{
+||||||| merged common ancestors
+	function cancelDepositContract() 
+		public 
+		restrictedAccess(Party.Initiator) 
+		verifyAtStage(Stage.InitialStage) 
+	{
+=======
+	/**
+	 * cancelDepositContract
+	 * Allows (only!) the initator to cancel the contract. This action is allowed
+	 * only if the contract is in the initial stage.
+	 */
+	function cancelDepositContract() public restrictedAccess(Party.Initiator)
+		verifyAtStage(Stage.NoCounterpart)	{
+>>>>>>> Add .gitignore rules to avoid contracts json files, add documentation to contract, remove ethereumjs-util dependancy, update cancel function
 		//Reset session before it began
 		factory.removeDeposit();
 		selfdestruct(initiator);
