@@ -1,5 +1,6 @@
 pragma solidity ^0.4.17;//for keccak256 and security issues
 
+
 /**
 * A contract used to create Deposit contracts. This contract can be deployed
 * once and any user that wants to initiate a Deposit contract can access it.
@@ -66,6 +67,7 @@ contract DepositFactory {
 		delete depositsCreators[msg.sender];//Only relevant if sent by a contract, so need to restrict
 	}
 }
+
 
 /**
 * A contract used for payment channel between two parties. Can be generated
@@ -142,7 +144,8 @@ contract Deposit {
 		require(msg.value > 0, "Pay more than 0 please.");
 		if (msg.sender == initiator) {	//the initiator adds money
 			state.currentDeposit[initiator] += (msg.value);
-		} else if (atStage(Stage.CounterpartSet)) {	//counterpart adds money
+		} else if (betweenStages(Stage.CounterpartSet, Stage.PaymentChannelOpen)) {
+      //counterpart adds money
 			state.currentDeposit[counterpart] += (msg.value);
 		}
 	}
@@ -286,18 +289,18 @@ contract Deposit {
 	 * beforeStage
 	 * TODO: Amit - add documentation, consider removing
 	 */
-	/* function beforeStage(Stage endStage) internal view returns (bool) {
+	/*function beforeStage(Stage endStage) internal view returns (bool) {
 		require(state.stage != Stage.Finished, "Assert fails");
 		assert(endStage != Stage.Finished);
 		Stage newEndStage = Stage(uint(endStage) + 1);
 		return betweenStages(Stage.InitialStage, newEndStage);
-	} */
+	}*/
 
 	/**
 	 * betweenStages
 	 * TODO: Amit - add documentation, consider removing
 	 */
-	/* function betweenStages(Stage beginStage, Stage endStage)
+	function betweenStages(Stage beginStage, Stage endStage)
 		internal
 		view
 		returns (bool)
@@ -306,23 +309,8 @@ contract Deposit {
 		uint beginStageInt = uint(beginStage);
 		uint stage = uint(state.stage);
 		return ((stage <= endStageInt) && (stage >= beginStageInt));
-	} */
+	}
 
-<<<<<<< HEAD
-	/**
-	 * cancelDepositContract
-	 * Allows (only!) the initator to cancel the contract. This action is allowed
-	 * only if the contract is in the initial stage.
-	 */
-	function cancelDepositContract() public restrictedAccess(Party.Initiator)
-		verifyAtStage(Stage.InitialStage)	{
-||||||| merged common ancestors
-	function cancelDepositContract() 
-		public 
-		restrictedAccess(Party.Initiator) 
-		verifyAtStage(Stage.InitialStage) 
-	{
-=======
 	/**
 	 * cancelDepositContract
 	 * Allows (only!) the initator to cancel the contract. This action is allowed
@@ -330,7 +318,6 @@ contract Deposit {
 	 */
 	function cancelDepositContract() public restrictedAccess(Party.Initiator)
 		verifyAtStage(Stage.NoCounterpart)	{
->>>>>>> Add .gitignore rules to avoid contracts json files, add documentation to contract, remove ethereumjs-util dependancy, update cancel function
 		//Reset session before it began
 		factory.removeDeposit();
 		selfdestruct(initiator);
@@ -338,9 +325,9 @@ contract Deposit {
 
 	/**
 	 * drawMyBalance
-	 * Allows (only!) the initator to cancel the contract. This action is allowed
-	 * only if the contract is in the initial stage.
-	 * TODO: Add modifier to only allow counterpart and initiator?
+	 * Allows the initiator and counterpart to draw their balance and by that
+   * terminating the channel.
+   * This action is allowed only if the contract is in the correct stage.
 	 */
 	function drawMyBalance() public payable
 		verifyAtStage(Stage.PaymentChannelLocked) {
@@ -365,7 +352,7 @@ contract Deposit {
 
 	/**
 	 * lockPublicSharedKey
-	 * Allows (only!) the counterpart to lock the key, if the stage is correctly
+	 * Allows (only!) the counterpart to lock the key, if the stage is correct
 	 * and if the address he supplied as the SGX's address matches the one supplied
 	 * earlier by the initiator. Return value indicates if the lock succeeded.
 	 * After a successful call the contract moves to the next stage - PaymentChannelOpen.
