@@ -97,7 +97,7 @@ contract Deposit {
 		mapping(address => uint) initialBalance;
 		mapping(address => uint) currentDeposit;
 		mapping(address => uint) finalBalance;
-		bool finalBalanceSet;
+    bool finalBalanceSet; /*TODO: Not needed, but removing causes bug */
 		Stage stage;
 	}
 
@@ -122,8 +122,8 @@ contract Deposit {
 		factory = DepositFactory(msg.sender);
 		initiator = creator;
 		State memory newState = State({
-			finalBalanceSet: false,
-			stage: Stage.InitialStage
+			stage: Stage.InitialStage,
+      finalBalanceSet: true
 		});
 		state = newState;
 		uint initialDeposit = 0;
@@ -144,7 +144,7 @@ contract Deposit {
 		require(msg.value > 0, "Pay more than 0 please.");
 		if (msg.sender == initiator) {	//the initiator adds money
 			state.currentDeposit[initiator] += (msg.value);
-		} else if (betweenStages(Stage.CounterpartSet, Stage.PaymentChannelOpen)) {	
+		} else if (betweenStages(Stage.CounterpartSet, Stage.PaymentChannelOpen)) {
       //counterpart adds money
 			state.currentDeposit[counterpart] += (msg.value);
 		}
@@ -342,6 +342,7 @@ contract Deposit {
 			return;//Do not continue to next step.
 		}
 		//If both sides drawed, reset contract
+    /** TODO maybe there is a prettier way to do it? asking if balance is 0 could be problematic */
 		if (state.finalBalance[initiator] == 0
 		    && state.finalBalance[counterpart] == 0)
 		{

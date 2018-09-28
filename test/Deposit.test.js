@@ -116,9 +116,7 @@ describe('Deposit contract values after creation', () => {
 
 	it('sets correct initial values for the state', async () => {
 		const initialInitialState = await deposit.methods.state().call();
-		const initialFinalBalanceSet = initialInitialState['finalBalanceSet'];
 		const initialStage = initialInitialState['stage'];
-		assert.equal(initialFinalBalanceSet, false, "FinalBalanceSet should be false!");
 		assert.equal(initialStage, 1, "Stage should be 1 after constructor!");
 		//Note that the mappings in state are not checked directly
 		const initialCurrentDeposits = await deposit.methods.viewCurrentDeposit().call();
@@ -144,6 +142,45 @@ describe('Deposit contract values after creation', () => {
 		});
 		res = await deposit.methods.counterpart().call();
 		assert.equal(res, counterpart, "Counterpart wasn't set correctly");
+	});
+});
+
+describe('Test keys', () => {
+	it('check that key works', async () => {
+		await deposit.methods.setCounterpart(counterpart).send({
+			from: initiator,
+			gas: '1000000'
+		});
+		await deposit.methods.setPublicKey(SgxAddress).send({
+			from: initiator,
+			gas: '1000000'
+		});
+		let isKeySet;
+		let res;
+		isKeySet = await deposit.methods.lockPublicSharedKey(SgxAddress).send({
+			from: counterpart,
+			gas: '1000000'
+		});
+		assert(isKeySet, "Key was not set correctly");
+		let signature;
+		let Totals = [aDeposit,bDeposit];
+		//hexTotals = await web3.utils.sha3(Totals);//FIXME this is the theoritical correct way, but does not work.
+		fixed_msg_sha = await web3.utils.soliditySha3({type: 'uint', value: Totals[0]}, {type: 'uint', value: Totals[1]});
+		//signature = await web3.eth.sign(hexTotals, SgxAddress);
+		signature = await web3.eth.sign(fixed_msg_sha, SgxAddress);
+		signature = signature.substr(2); //remove 0x
+		let r = '0x' + signature.slice(0, 64);
+		let s = '0x' + signature.slice(64, 128);
+		let v = '0x' + signature.slice(128, 130);
+		assert(web3Helper.isHexStrict(r) && web3Helper.isHexStrict(s) && web3Helper.isHexStrict(v), "either v, r, or s is not strictly hex");
+		//const v_decimal = web3Helper.hexToNumber(v) + 27;
+		//assert(v_decimal == 27 || v_decimal == 28, "v_decimal is not 27 or 28");
+		const v_decimal = web3Helper.toV_Decimal(v);
+		try {
+			res = await testHelper.setFinalState(Totals, fixed_msg_sha, v_decimal, r, s, counterpart);
+		} catch (error) {
+			assert(false, error);
+		}
 	});
 });
 
@@ -218,106 +255,43 @@ describe('Basic behavior of Deposit contract', () => {
     assert.equal(currentDeposits[0], initialValue + 13, "Initiator current deposit is incorrect");
     assert.equal(currentDeposits[1], 14, "Counterpart current deposit is incorrect");
 
+    //Then we lock the contract
+    let signature;
+    let Totals = [currentDeposits[0],currentDeposits[1]];
+    fixed_msg_sha = await web3.utils.soliditySha3({type: 'uint', value: Totals[0]}, {type: 'uint', value: Totals[1]});
+    signature = await web3.eth.sign(fixed_msg_sha, SgxAddress);
+    signature = signature.substr(2); //remove 0x
+    let r = '0x' + signature.slice(0, 64);
+    let s = '0x' + signature.slice(64, 128);
+    let v = '0x' + signature.slice(128, 130);
+    assert(web3Helper.isHexStrict(r) && web3Helper.isHexStrict(s) && web3Helper.isHexStrict(v), "either v, r, or s is not strictly hex");
+    const v_decimal = web3Helper.toV_Decimal(v);
+    await deposit.methods.setFinalState(Totals, fixed_msg_sha, v_decimal, r, s).send({
+      from: counterpart,
+      gas: '2000000'
+    });
+    currentState = await deposit.methods.state().call();
+    assert.equal(currentState['stage'], 5, "The state should be PaymentChannelLocked but it is not");
 
-    // await deposit.methods.drawMyBalance().send({
-    //   from: counterpart,
-    //   gas: '1000000'
-    // });
-    // await deposit.methods.drawMyBalance().send({
-    //   from: initiator,
-    //   gas: '1000000'
-    // });
+    //Then both parties ask to draw their balance
+    await deposit.methods.drawMyBalance().send({
+      from: counterpart,
+      gas: '1000000'
+    });
+    await deposit.methods.drawMyBalance().send({
+      from: initiator,
+      gas: '1000000'
+    });
+    /** TODO: Need a different way to verify balance **/
+    console.log('~~~~ initiator balance: ' + await web3.eth.getBalance(initiator));
+    console.log('~~~~ counterpart balance: ' + await web3.eth.getBalance(counterpart));
+
 
   });
 
-  // it('allows to set counterpart, deposit money from both parties and closing the contract', async () => {
-  //   //First we set the counterpart
-  //   await deposit.methods.setCounterpart(counterpart).send({
-  //     from: initiator,
-  //     gas: '1000000'
-  //   });
-  //   //Then we add money(both sides)
-  //   await deposit.methods.addDeposit().send({
-  //     from: initiator,
-  //     gas: '1000000',
-  //     value: '3'
-  //   });
-  //   await deposit.methods.addDeposit().send({
-  //     from: counterpart,
-  //     gas: '1000000',
-  //     value: '2'
-  //   });
-  //   //Set SgxAddress and verify it
-	// 	await deposit.methods.setPublicKey(SgxAddress).send({
-	// 		from: initiator,
-	// 		gas: '1000000'
-	// 	});
-	// 	await deposit.methods.lockPublicSharedKey(SgxAddress).send({
-	// 		from: counterpart,
-	// 		gas: '1000000'
-	// 	});
-  //   let isKeySetRes = await deposit.methods.isKeySet().call();
-  //   assert.equal(isKeySetRes, true, "Key is not set even though it should be");
-  //   const currentState = await deposit.methods.state().call();
-  //   assert.equal(currentState['stage'], 4, "The state should be PaymentChannelOpen but it is not");
-  //   let currentDeposits = await deposit.methods.viewCurrentDeposit().call();
-  //   assert.equal(currentDeposits[0], initialValue + 3, "Initiator current deposit is incorrect");
-  //   assert.equal(currentDeposits[1], 2, "Initiator current deposit is incorrect");
-  //
-  //   // await deposit.methods.drawMyBalance().send({
-  //   //   from: counterpart,
-  //   //   gas: '1000000'
-  //   // });
-  //   // await deposit.methods.drawMyBalance().send({
-  //   //   from: initiator,
-  //   //   gas: '1000000'
-  //   // });
-  //
-  // });
-
-
-
 });
 
-/* TODO: Stopped working, did API change?? */
-// describe('Test keys', () => {
-// 	it('check that key works', async () => {
-// 		await deposit.methods.setCounterpart(counterpart).send({
-// 			from: initiator,
-// 			gas: '1000000'
-// 		});
-// 		await deposit.methods.setPublicKey(SgxAddress).send({
-// 			from: initiator,
-// 			gas: '1000000'
-// 		});
-// 		let isKeySet;
-// 		let res;
-// 		isKeySet = await deposit.methods.lockPublicSharedKey(SgxAddress).send({
-// 			from: counterpart,
-// 			gas: '1000000'
-// 		});
-// 		assert(isKeySet, "Key was not set correctly");
-// 		let signature;
-// 		let Totals = [aDeposit,bDeposit];
-// 		//hexTotals = await web3.utils.sha3(Totals);//FIXME this is the theoritical correct way, but does not work.
-// 		fixed_msg_sha = await web3.utils.soliditySha3({type: 'uint', value: Totals[0]}, {type: 'uint', value: Totals[1]});
-// 		//signature = await web3.eth.sign(hexTotals, SgxAddress);
-// 		signature = await web3.eth.sign(fixed_msg_sha, SgxAddress);
-// 		signature = signature.substr(2); //remove 0x
-// 		let r = '0x' + signature.slice(0, 64);
-// 		let s = '0x' + signature.slice(64, 128);
-// 		let v = '0x' + signature.slice(128, 130);
-// 		assert(web3Helper.isHexStrict(r) && web3Helper.isHexStrict(s) && web3Helper.isHexStrict(v), "either v, r, or s is not strictly hex");
-// 		//const v_decimal = web3Helper.hexToNumber(v) + 27;
-// 		//assert(v_decimal == 27 || v_decimal == 28, "v_decimal is not 27 or 28");
-// 		const v_decimal = web3Helper.toV_Decimal(v);
-// 		try {
-// 			res = await testHelper.setFinalState(Totals, fixed_msg_sha, v_decimal, r, s, counterpart);
-// 		} catch (error) {
-// 			assert(false, error);
-// 		}
-// 	});
-// });
+
 
 
   //it('allows people to contribute money and marks them as approvers', async () => {
