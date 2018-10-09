@@ -30,16 +30,14 @@ const A_DEPOSIT = 1;
 const B_DEPOSIT = 1;
 
 //let accounts;
-let factory;
+let deposit, factory;
 let depositAddress;
-let deposit;
-let initiator;
-let counterpart;
-let attacker;
+let initiator, counterpart, attacker;
 let SgxAddress;
 let aDeposit = A_DEPOSIT;
 let bDeposit = B_DEPOSIT;
 let web3;
+//let defaultInitiatorBalance = 100000000000000000000;
 
 // Runs before each test
 beforeEach(async () => {
@@ -57,11 +55,16 @@ beforeEach(async () => {
 	factory.options.gas = 5000000; // provide as fallback always 5M gas
 
 	// Using the factory's method "createDeposit" to create a new deposit contract
-	await factory.methods.createDeposit().send({
-		from: initiator,
-		gas: '3000000',
-		value: initialValue + FEE_VALUE
-	});
+	// gasDepositCreating = await web3.eth.estimateGas(await factory.methods.createDeposit().send({
+	// 	from: initiator,
+	// 	gas: '3000000',
+	// 	value: initialValue + FEE_VALUE
+	// }));
+  await factory.methods.createDeposit().send({
+  	from: initiator,
+  	gas: '3000000',
+  	value: initialValue + FEE_VALUE
+  });
 
 	//Fancy way to do const array = await...; depositAddress = array[0];
 	[depositAddress] = await factory.methods.getDepositContract(initiator).call();
@@ -282,74 +285,24 @@ describe('Basic behavior of Deposit contract', () => {
       from: initiator,
       gas: '1000000'
     });
-    /** TODO: Need a different way to verify balance **/
-    console.log('~~~~ initiator balance: ' + await web3.eth.getBalance(initiator));
-    console.log('~~~~ counterpart balance: ' + await web3.eth.getBalance(counterpart));
+    // /** TODO: Need a different way to verify balance **/
+    // console.log('~~~~ initiator balance: ' + await web3.eth.getBalance(initiator));
+    // console.log('~~~~ counterpart balance: ' + await web3.eth.getBalance(counterpart));
 
-
-  });
+    //Setting a longer timeout since this is a long test
+  }).timeout(3500);
 
 });
 
-
-
-
-  //it('allows people to contribute money and marks them as approvers', async () => {
-    //await campaign.methods.contribute().send({
-      //value: '200',
-      //from: accounts[1]
-    //});
-    //const isContributor = await campaign.methods.approvers(accounts[1]).call();
-    //assert(isContributor);
-  //});
-
-  //it('requires a minimum contribution', async () => {
-    //try {
-      //await campaign.methods.contribute().send({
-        //value: '5',
-        //from: accounts[1]
-      //});
-      //assert(false);
-    //} catch (err) {
-      //assert(err);
-    //}
-  //});
-
-  //it('allows a manager to make a payment request', async () => {
-    //await campaign.methods
-      //.createRequest('Buy batteries', '100', accounts[1])
-      //.send({
-        //from: accounts[0],
-        //gas: '1000000'
-      //});
-    //const request = await campaign.methods.requests(0).call();
-
-    //assert.equal('Buy batteries', request.description);
-  //});
-
-  //it('processes requests', async () => {
-    //await campaign.methods.contribute().send({
-      //from: accounts[0],
-      //value: web3.utils.toWei('10', 'ether')
-    //});
-
-    //await campaign.methods
-      //.createRequest('A', web3.utils.toWei('5', 'ether'), accounts[1])
-      //.send({ from: accounts[0], gas: '1000000' });
-
-    //await campaign.methods.approveRequest(0).send({
-      //from: accounts[0],
-      //gas: '1000000'
-    //});
-
-    //await campaign.methods.finalizeRequest(0).send({
-      //from: accounts[0],
-      //gas: '1000000'
-    //});
-
-    //let balance = await web3.eth.getBalance(accounts[1]);
-    //balance = web3.utils.fromWei(balance, 'ether');
-    //balance = parseFloat(balance);
-
-    //assert(balance > 104);
-  //});
+// describe('Verifying gas is only spent on things we know', () => {
+// 	it('charges the initiator for using DepositFactory', async () => {
+//     currentInitiatorBalance = await web3.eth.getBalance(initiator);
+//     currentGasPrice = await web3.eth.getGasPrice();
+//     console.log('~~1expected: ' + defaultInitiatorBalance + "-");
+//     console.log('~~2expected: ' + gasDepositCreating * currentGasPrice);
+//     console.log('~~~actual: ' + currentInitiatorBalance);
+//     assert.equal(currentInitiatorBalance, defaultInitiatorBalance - gasDepositCreating * currentGasPrice,
+//       "Some gas is lost in generating Deposit contract");
+//
+// 	});
+// });
