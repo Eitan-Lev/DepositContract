@@ -7,6 +7,7 @@
 !.gitignore
 !/test
 !/pages
+!/old_pages
 !/components
 !/helpers
 !package.json
