@@ -1,13 +1,25 @@
 Operations:
 npm init
-npm install --save solc	
+npm install --save solc
 npm install --save mocha ganache-cli web3@1.0.0-beta.26 //Should be beta.35 according to newer video
 npm install --save fs-extra
-npm install --save truffle-hdwallet-provider
-------npm run compile.js (maby not true!)
+npm install --save truffle-hdwallet-provider@0.0.3
+//another react package for easier styling
+npm install --save semantic-ui-react
+npm install --save semantic-ui-css
+//package for easier dynamic routing of front end
+npm install --save next-routes
+
+//(to create the contracts.json files in ethereum/build directory)
 node compile.js
+//to run the test file from /test directory
 npm run test
+//to deploy the contract to the rinkeby blockchain
 node deploy.js (from ethereum dir)
+
+
+
+
 
 Instructions:
 Work from home directory (not ~/home)
@@ -23,5 +35,3 @@ Edit package.json -> scripts.test: mocha (json way).
 
 Attempting to deploy from account 0xcF01971DB0CAB2CBeE4A8C21BB7638aC1FA1c38c
 Contract deployed to 0xFa39dd420CCa671AE12730d2A2F3e13B7dC87da0
-
-
