@@ -382,4 +382,14 @@ contract Deposit {
 		state.finalBalance[initiator] = uint(Totals[0]);
 		state.finalBalance[counterpart] = uint(Totals[1]);
 	}
+
+  // A helper function to get all the information we want to display in
+  // the front-end
+  function getSummary() public view returns (address, address, address, bool, uint, uint) {
+    return (
+      initiator, counterpart, SgxAddress, isKeySet,
+      state.currentDeposit[initiator], state.currentDeposit[counterpart]
+    );
+  }
+
 }

@@ -83,6 +83,8 @@ describe('Basic deployment of contracts', () => {
 	it('deploys a factory and a deposit contract', () => {
 		assert.ok(factory.options.address);
 		assert.ok(deposit.options.address);
+      console.log('~~~~~~~~~~ initiator: ' + initiator);
+      console.log('~~~~~~~~~~ typeof initiator: ' + typeof(initiator));
 	});
 
 	it('saves contract in factory\'s deployed contracts', async () => {
