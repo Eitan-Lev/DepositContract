@@ -4,7 +4,7 @@ import { Form, Button, Message } from 'semantic-ui-react';
 import Deposit from '../ethereum/deposit';
 import web3 from '../ethereum/web3';
 
-class Cancel extends Component {
+class DrawBalance extends Component {
 	state = {
 		errorMessage: '',
 		successMessage: '',
@@ -19,7 +19,7 @@ class Cancel extends Component {
 
 		try {
 			const accounts = await web3.eth.getAccounts();
-			await deposit.methods.cancelDepositContract().send({
+			await deposit.methods.drawMyBalance().send({
 				from: accounts[0]
 			});
 		} catch (err) {
@@ -29,9 +29,7 @@ class Cancel extends Component {
 		this.setState({ loading: false });
 		if (this.state.errorMessage == null) {
 			this.setState({
-				successMessage:
-					'The deposit was canceled successfully! Unfortunately \
-          currently that means that all deposits of initiator were deleted.'
+				successMessage: 'Your balance has been drawn successfully!'
 			});
 		}
 	};
@@ -45,13 +43,12 @@ class Cancel extends Component {
 			>
 				<Message error header="Oops!" content={this.state.errorMessage} />
 				<Message success header="Yay!" content={this.state.successMessage} />
-				<Form.Button fluid negative loading={this.state.loading}>
-					If you are yet to set a counterpart, you can cancel this channel by
-					clicking here
+				<Form.Button fluid positive loading={this.state.loading}>
+					If the channel is locked, you can draw your balance by clicking here!
 				</Form.Button>
 			</Form>
 		);
 	}
 }
 
-export default Cancel;
+export default DrawBalance;

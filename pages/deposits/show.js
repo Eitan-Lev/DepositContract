@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
+import { Card, Grid, Button } from 'semantic-ui-react';
 import Layout from '../../components/Layout';
 import Deposit from '../../ethereum/deposit';
-import { Card, Grid, Button } from 'semantic-ui-react';
 import AddDepositForm from '../../components/AddDepositForm';
 import { Link } from '../../routes';
 
@@ -15,7 +15,7 @@ class DepositShow extends Component {
 			initiatorAddress: summary[0],
 			counterpartAddress: summary[1],
 			sgxAddress: summary[2],
-			isKeySet: summary[3],
+			isKeySet: summary[3] ? 'True' : 'False',
 			initiatorBalance: summary[4],
 			counterpartBalance: summary[5]
 		};
@@ -90,7 +90,18 @@ class DepositShow extends Component {
 						<Grid.Column>
 							<Link route={`/deposits/${this.props.depositAddress}/manage`}>
 								<a>
-									<Button secondary> Manage this contract!</Button>
+									<Button secondary> Manage this contract as initiator </Button>
+								</a>
+							</Link>
+							<Link
+								route={`/deposits/${
+									this.props.depositAddress
+								}/manageCounterpart`}
+							>
+								<a>
+									<Button color="yellow">
+										Manage this contract as counterpart
+									</Button>
 								</a>
 							</Link>
 						</Grid.Column>
