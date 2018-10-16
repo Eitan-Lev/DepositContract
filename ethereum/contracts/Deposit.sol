@@ -385,10 +385,11 @@ contract Deposit {
 
   // A helper function to get all the information we want to display in
   // the front-end
-  function getSummary() public view returns (address, address, address, bool, uint, uint) {
+  function getSummary() public view returns (address, address, address, bool, uint, uint, Stage) {
     return (
       initiator, counterpart, SgxAddress, isKeySet,
-      state.currentDeposit[initiator], state.currentDeposit[counterpart]
+      state.currentDeposit[initiator], state.currentDeposit[counterpart],
+      state.stage
     );
   }
 

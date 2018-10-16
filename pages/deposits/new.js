@@ -6,56 +6,64 @@ import web3 from '../../ethereum/web3';
 import { Router } from '../../routes';
 
 class DepositNew extends Component {
-  state = {
-    initialDeposit: '',
-    errorMessage: '',
-    loading: false
-  };
+	state = {
+		initialDeposit: '',
+		errorMessage: '',
+		loading: false
+	};
 
-  onSubmit = async (event) => {
-    event.preventDefault(); //So we won't send the data to the server
+	onSubmit = async event => {
+		event.preventDefault(); //So we won't send the data to the server
 
-    this.setState({ loading: true, errorMessage: '' });
+		this.setState({ loading: true, errorMessage: '' });
 
-    try {
-      const accounts = await web3.eth.getAccounts();
-      await factory.methods.createDeposit().send({
-        from: accounts[0],
-        value: this.state.initialDeposit
-      });
+		try {
+			const accounts = await web3.eth.getAccounts();
+			await factory.methods.createDeposit().send({
+				from: accounts[0],
+				value: this.state.initialDeposit
+			});
 
-      Router.pushRoute('/');
-    } catch (err) {
-      this.setState({ errorMessage: err.message });
-    }
+			Router.pushRoute('/');
+		} catch (err) {
+			this.setState({ errorMessage: err.message });
+		}
 
-    this.setState({ loading: false });
+		this.setState({ loading: false });
+	};
 
-  };
+	render() {
+		console.log(web3.version);
+		return (
+			<Layout>
+				<h3>Create a New Deposit!</h3>
 
-  render() {
-    return (
-      <Layout>
-        <h3>Create a New Deposit!</h3>
+				<Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
+					<Form.Field>
+						<label>Initial Deposit </label>
+						<Input
+							label="wei"
+							labelPosition="right"
+							value={this.state.initialDeposit}
+							onChange={event =>
+								this.setState({ initialDeposit: event.target.value })
+							}
+						/>
+					</Form.Field>
 
-        <Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
-          <Form.Field>
-            <label>Initial Deposit </label>
-            <Input
-              label="wei"
-              labelPosition="right"
-              value={this.state.initialDeposit}
-              onChange={event => this.setState({ initialDeposit: event.target.value})}
-              />
-          </Form.Field>
-
-          <Message error header="Something went wrong!" content={this.state.errorMessage} />
-          <Button loading={this.state.loading} primary> Create! </Button>
-        </Form>
-
-      </Layout>
-    );
-  }
+					<Message
+						error
+						header="Something went wrong!"
+						content={this.state.errorMessage}
+					/>
+					<Button loading={this.state.loading} primary>
+						{' '}
+						Create!{' '}
+					</Button>
+				</Form>
+			</Layout>
+		);
+	}
 }
 
 export default DepositNew;

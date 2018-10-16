@@ -7,6 +7,7 @@ const routes = require('next-routes')();
 }
 
 routes
+	.add('/SignatureHelper', 'SignatureHelper')
 	.add('/deposits/new', '/deposits/new')
 	.add('/deposits/:address', '/deposits/show')
 	.add('/deposits/:address/manage', '/deposits/manage')

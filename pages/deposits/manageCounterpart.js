@@ -4,6 +4,8 @@ import Layout from '../../components/Layout';
 import Cancel from '../../components/Cancel';
 import ConfirmSGX from '../../components/ConfirmSGX';
 import AddDepositForm from '../../components/AddDepositForm';
+import DrawBalance from '../../components/DrawBalance';
+import FinalStateForm from '../../components/FinalStateForm';
 
 class ManageCounterpart extends Component {
 	static async getInitialProps(props) {
@@ -21,18 +23,28 @@ class ManageCounterpart extends Component {
 							<ConfirmSGX address={this.props.address} />
 						</Grid.Column>
 					</Grid.Row>
-
 					<Divider />
-					<Grid.Row>
-						<Grid.Column>
-							<h4> Add More Money to the Channel</h4>
-						</Grid.Column>
-					</Grid.Row>
+
 					<Grid.Row>
 						<Grid.Column>
 							<AddDepositForm address={this.props.address} />
 						</Grid.Column>
 					</Grid.Row>
+					<Divider />
+
+					<Grid.Row>
+						<Grid.Column>
+							<FinalStateForm address={this.props.address} />
+						</Grid.Column>
+					</Grid.Row>
+					<Divider />
+
+					<Grid.Row>
+						<Grid.Column>
+							<DrawBalance address={this.props.address} />
+						</Grid.Column>
+					</Grid.Row>
+					<Divider />
 				</Grid>
 			</Layout>
 		);

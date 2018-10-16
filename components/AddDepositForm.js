@@ -1,6 +1,13 @@
 import React from 'react';
 import { Component } from 'react';
-import { Form, Input, Message, Button } from 'semantic-ui-react';
+import {
+	Form,
+	Input,
+	Message,
+	Button,
+	Segment,
+	Label
+} from 'semantic-ui-react';
 import Deposit from '../ethereum/deposit';
 import web3 from '../ethereum/web3';
 import { Router } from '../routes';
@@ -34,21 +41,26 @@ class AddDepositForm extends Component {
 
 	render() {
 		return (
-			<Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
-				<Form.Field>
-					<label> Deposit money into this channel! </label>
-					<Input
-						value={this.state.value}
-						onChange={event => this.setState({ value: event.target.value })}
-						label="wei"
-						labelPosition="right"
-					/>
-				</Form.Field>
-				<Message error header="Oops!" content={this.state.errorMessage} />
-				<Button loading={this.state.loading} primary>
-					Deposit!
-				</Button>
-			</Form>
+			<Segment>
+				<Label attached="top" size="large">
+					Deposit more money to the Channel
+				</Label>
+				<Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
+					<Form.Field>
+						<Input
+							value={this.state.value}
+							onChange={event => this.setState({ value: event.target.value })}
+							label="wei"
+							labelPosition="right"
+							placeholder="insert the amount of wei you wish to deposit"
+						/>
+					</Form.Field>
+					<Message error header="Oops!" content={this.state.errorMessage} />
+					<Button loading={this.state.loading} primary>
+						Deposit!
+					</Button>
+				</Form>
+			</Segment>
 		);
 	}
 }

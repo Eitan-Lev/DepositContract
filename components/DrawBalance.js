@@ -44,7 +44,7 @@ class DrawBalance extends Component {
 				<Message error header="Oops!" content={this.state.errorMessage} />
 				<Message success header="Yay!" content={this.state.successMessage} />
 				<Form.Button fluid positive loading={this.state.loading}>
-					If the channel is locked, you can draw your balance by clicking here!
+					If the channel is closed, you can draw your balance by clicking here!
 				</Form.Button>
 			</Form>
 		);
