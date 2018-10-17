@@ -30,7 +30,9 @@ In ethereum --> create the files compile.js and deploy.js
 Perform above operations.
 Create "test" directory.
 Edit package.json -> scripts.test: mocha (json way).
-
+Note: Sometimes when you use node compile.js you get some weird error. in this
+      case - open node.js terminal, close the code editor and run the command from the
+      terminal you opened. It fixes it.
 
 
 Attempting to deploy from account 0xcF01971DB0CAB2CBeE4A8C21BB7638aC1FA1c38c

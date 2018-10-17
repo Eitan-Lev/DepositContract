@@ -17,6 +17,10 @@ class FinalStateForm extends Component {
 	state = {
 		initiatorFinalBalance: '',
 		counterpartFinalBalance: '',
+		fixedMsgSha: '',
+		r: '',
+		s: '',
+		v: '',
 		errorMessage: '',
 		loading: false
 	};
@@ -33,9 +37,17 @@ class FinalStateForm extends Component {
 
 		try {
 			const accounts = await web3.eth.getAccounts();
-			await deposit.methods.setFinalState(Totals).send({
-				from: accounts[0]
-			});
+			await deposit.methods
+				.setFinalState(
+					Totals,
+					this.state.fixedMsgSha,
+					this.state.r,
+					this.state.s,
+					this.state.v
+				)
+				.send({
+					from: accounts[0]
+				});
 			Router.replaceRoute(`/deposits/${this.props.address}`);
 		} catch (err) {
 			this.setState({ errorMessage: err.message });
@@ -73,6 +85,47 @@ class FinalStateForm extends Component {
 										})
 									}
 									placeholder="insert final balance in wei"
+								/>
+							</Grid.Column>
+						</Grid.Row>
+
+						<Grid.Row columns={1}>
+							<Grid.Column>
+								<Form.Input
+									value={this.state.fixedMsgSha}
+									onChange={event =>
+										this.setState({ fixedMsgSha: event.target.value })
+									}
+									label="SHA-3 Result of the message"
+									placeholder="insert msg sha supplied by SGX"
+									fluid
+								/>
+							</Grid.Column>
+						</Grid.Row>
+
+						<Grid.Row columns={3}>
+							<Grid.Column>
+								<Form.Input
+									value={this.state.r}
+									onChange={event => this.setState({ r: event.target.value })}
+									placeholder="insert r value supplied by SGX"
+									label="r value"
+								/>
+							</Grid.Column>
+							<Grid.Column>
+								<Form.Input
+									value={this.state.s}
+									onChange={event => this.setState({ s: event.target.value })}
+									placeholder="insert s value supplied by SGX"
+									label="s value"
+								/>
+							</Grid.Column>
+							<Grid.Column>
+								<Form.Input
+									value={this.state.v}
+									onChange={event => this.setState({ v: event.target.value })}
+									placeholder="insert v value supplied by SGX"
+									label="v value"
 								/>
 							</Grid.Column>
 						</Grid.Row>

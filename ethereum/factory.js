@@ -3,7 +3,7 @@ import DepositFactory from './build/DepositFactory.json';
 
 const instance = new web3.eth.Contract(
 	JSON.parse(DepositFactory.interface),
-	'0x2250b28fFb7A3a04d9D8069BA2F1fEb45d5CDBC3'
+	'0x021C9936D551f5c42b58dA2867FA5CD2fFed7DEb'
 );
 
 export default instance;

@@ -176,6 +176,14 @@ contract Deposit {
 		_;
 	}
 
+  modifier isSGXApproved(uint[2] Totals) {
+    SGXContract sgxContract = SGXContract(SgxAddress);
+    uint[2] memory sgxBalances = sgxContract.getBalances();
+    require(sgxBalances[0] == Totals[0], "Initiator balances does not match!");
+    require(sgxBalances[1] == Totals[1], "Counterpart balances does not match!");
+    _;
+  }
+
 	/**
 	 * nextStage
 	 * Moves the contract to the next stage, if possible and allowrd.
@@ -371,7 +379,7 @@ contract Deposit {
 
 	/* TODO: Amit - add documentation */
 	//function setFinalState(uint[2] Totals, uint8 v, bytes32 r, bytes32 s)
-	function setFinalState(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s)
+	/* function setFinalState(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s)
 		public
 		restricted
 		verifyAtStage(Stage.PaymentChannelOpen)
@@ -381,7 +389,19 @@ contract Deposit {
 	{
 		state.finalBalance[initiator] = uint(Totals[0]);
 		state.finalBalance[counterpart] = uint(Totals[1]);
-	}
+	} */
+  function setFinalState(uint[2] Totals)
+    public
+    restricted
+    verifyAtStage(Stage.PaymentChannelOpen)
+    isSGXApproved(Totals)
+    transitionNext
+  {
+    SGXContract sgxContract = SGXContract(SgxAddress);
+    uint[2] memory sgxBalances = sgxContract.getBalances();
+    state.finalBalance[initiator] = uint(sgxBalances[0]);
+    state.finalBalance[counterpart] = uint(sgxBalances[1]);
+  }
 
   // A helper function to get all the information we want to display in
   // the front-end
@@ -392,5 +412,36 @@ contract Deposit {
       state.stage
     );
   }
+
+}
+
+
+
+contract SGXContract {
+
+    /**
+     * Initialized to 0
+     * initiator's balance is currentBalance[0]
+     * and counterpart's balance is currentBalance[1]
+     */
+	uint[2] currentBalance;
+
+	function setInitiatorBalance(uint initiatorBalance) public {
+	    currentBalance[0] = initiatorBalance;
+	}
+
+    function setCounterpartBalance(uint counterpartBalance) public {
+	    currentBalance[1] = counterpartBalance;
+	}
+
+	function setBalances(uint initiatorBalance, uint counterpartBalance)
+	public {
+		setInitiatorBalance(initiatorBalance);
+		setCounterpartBalance(counterpartBalance);
+	}
+
+	function getBalances() public view returns (uint[2]) {
+	    return currentBalance;
+	}
 
 }

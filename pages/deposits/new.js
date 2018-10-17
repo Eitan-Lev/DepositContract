@@ -57,8 +57,7 @@ class DepositNew extends Component {
 						content={this.state.errorMessage}
 					/>
 					<Button loading={this.state.loading} primary>
-						{' '}
-						Create!{' '}
+						Create!
 					</Button>
 				</Form>
 			</Layout>
