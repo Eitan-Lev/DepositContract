@@ -30,10 +30,38 @@ In ethereum --> create the files compile.js and deploy.js
 Perform above operations.
 Create "test" directory.
 Edit package.json -> scripts.test: mocha (json way).
-Note: Sometimes when you use node compile.js you get some weird error. in this
-      case - open node.js terminal, close the code editor and run the command from the
+
+
+
+According to Stephen's course, for windows:
+1. Download the latest node.js from: https://nodejs.org/en/download/
+2. Git clone/ pull the project from our github repository.
+3. Use npm init in the root directory (/DepositContract)
+4. Open a windows command line as administrator and run:
+  npm install --global --production windows-build-tools
+  If that doesn't work - you have to go to the course video, lecture 37 and follow the second option.
+5. Install a bunch of libraries: (pay attention to versions)
+  npm install --save solc
+  npm install --save mocha ganache-cli web3@1.0.0-beta.35
+  npm install --save fs-extra
+  npm install --save truffle-hdwallet-provider@0.0.3
+If any of these commands doesn't execute successfully, look online for solutions.
+6. Install libraries used for development of front end (not sure if this is a must in order to see it):
+  npm install --save semantic-ui-react
+  npm install --save semantic-ui-css
+  npm install --save next-routes
+Again, if any of that doesn't work - you should search for a solution.
+7. If you wish to re-compile the contract (you don't have to do it, and it's better you don't do it unless you have a good reason):
+cd ..\ethereum
+node compile.js
+(verify you see all 3 .json files inside \ethereum\build)
+node deploy.js
+Save the addresses you get for the factory and for the SGX simulator.
+the factory address should be placed in \ethereum\factory.js at line 6.
+Note: Sometimes when you use node compile.js or deploy you get some weird error. in this
+      case - open node.js terminal as administrator from windows search, close the code editor and run the command from the
       terminal you opened. It fixes it.
-
-
-Attempting to deploy from account 0xcF01971DB0CAB2CBeE4A8C21BB7638aC1FA1c38c
-Contract deployed to 0xFa39dd420CCa671AE12730d2A2F3e13B7dC87da0
+8. cd back into root directory (not sure if this is a must) and run:
+npm run dev
+Wait until the command line tells you that compilation was successful.
+9. Open chrome (or any other browser with metamask) and enter localhost:3000
