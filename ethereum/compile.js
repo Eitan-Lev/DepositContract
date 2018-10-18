@@ -6,22 +6,23 @@ const buildPath = path.resolve(__dirname, 'build');
 fs.removeSync(buildPath);
 
 const depositPath = path.resolve(__dirname, 'contracts', 'Deposit.sol');
-//console.log("1");
-const source = fs.readFileSync(depositPath, 'utf8');//Read source code from sol file
-//console.log("2");
-const output = solc.compile(source, 1).contracts;//Compile source code
+//const simulatorPath = path.resolve(__dirname, 'contracts', 'SGXSimulator.sol');
 
-//const inboxPath = path.resolve(__dirname, 'contracts', 'Deposit.sol');
-//const source = fs.readFileSync(inboxPath, 'utf8');
-//module.exports = solc.compile(source, 1).contracts[':Deposit'];
-//console.log(solc.compile(source, 1).contracts);
+//Read source code from sol file
+const depositSource = fs.readFileSync(depositPath, 'utf8');
+//const simulatorSource = fs.readFileSync(simulatorPath, 'utf8');
 
-//console.log("3");
-fs.ensureDirSync(buildPath); //Creates the build folder if it doesn't exist
+//Compile source code
+const depositOutput = solc.compile(depositSource, 1).contracts;
+//const simulatorOutput = solc.compile(simulatorSource, 1).contracts;
 
-for (let contract in output) {
-  fs.outputJsonSync(
-    path.resolve(buildPath, contract.replace(':', '') + '.json'),
-    output[contract]
-  );
+//Create the build folder if it doesn't exist
+fs.ensureDirSync(buildPath);
+
+//Create the .json files
+for (let contract in depositOutput) {
+	fs.outputJsonSync(
+		path.resolve(buildPath, contract.replace(':', '') + '.json'),
+		depositOutput[contract]
+	);
 }

@@ -1,9 +1,16 @@
 const routes = require('next-routes')();
 
+{
+	/*
+':' is a wildcard and the name after it is a variable
+*/
+}
+
 routes
-  .add('/campaigns/new', '/campaigns/new')
-  .add('/campaigns/:address', '/campaigns/show')
-  .add('/campaigns/:address/requests', '/campaigns/requests/index')
-  .add('/campaigns/:address/requests/new', '/campaigns/requests/new');
+	.add('/SignatureHelper', 'SignatureHelper')
+	.add('/deposits/new', '/deposits/new')
+	.add('/deposits/:address', '/deposits/show')
+	.add('/deposits/:address/manage', '/deposits/manage')
+	.add('/deposits/:address/manageCounterpart', '/deposits/manageCounterpart');
 
 module.exports = routes;

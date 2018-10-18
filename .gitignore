@@ -7,9 +7,13 @@
 !.gitignore
 !/test
 !/pages
+!/old_pages
 !/components
 !/helpers
 !package.json
+!routes.js
+!server.js
+!Addresses.txt
 
 # Allow contracts to be tracked but not .json files of them
 !/ethereum

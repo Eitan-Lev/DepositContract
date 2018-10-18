@@ -1,5 +1,6 @@
 pragma solidity ^0.4.17;//for keccak256 and security issues
 
+
 /**
 * A contract used to create Deposit contracts. This contract can be deployed
 * once and any user that wants to initiate a Deposit contract can access it.
@@ -108,7 +109,6 @@ contract Deposit {
 	address public counterpart;
 
 	address public SgxAddress;
-    SGXSimulator public sgxSimulator;
 
 	bool public isKeySet = false;
 
@@ -175,15 +175,6 @@ contract Deposit {
 		require(ecrecover(msgHash, v, r, s) == SgxAddress, "Verify signature failed");
 		_;
 	}
-
-  modifier isSGXApproved(uint[2] Totals) {
-    uint[2] memory sgxBalances;
-    sgxBalances[0] = sgxSimulator.currentBalance(0);
-    sgxBalances[1] = sgxSimulator.currentBalance(1);
-    require(sgxBalances[0] == Totals[0], "Initiator balance does not match!");
-    require(sgxBalances[1] == Totals[1], "Counterpart balance does not match!");
-    _;
-  }
 
 	/**
 	 * nextStage
@@ -375,13 +366,12 @@ contract Deposit {
 			state.stage = Stage(uint(state.stage) - 1);//revert stage
 			SgxAddress = 0;
 		}
-    sgxSimulator = SGXSimulator(SgxAddress);
 		return isKeySet;
 	}
 
 	/* TODO: Amit - add documentation */
 	//function setFinalState(uint[2] Totals, uint8 v, bytes32 r, bytes32 s)
-	/* function setFinalState(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s)
+	function setFinalState(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s)
 		public
 		restricted
 		verifyAtStage(Stage.PaymentChannelOpen)
@@ -391,20 +381,7 @@ contract Deposit {
 	{
 		state.finalBalance[initiator] = uint(Totals[0]);
 		state.finalBalance[counterpart] = uint(Totals[1]);
-	} */
-  function setFinalState(uint[2] Totals)
-    public
-    restricted
-    verifyAtStage(Stage.PaymentChannelOpen)
-    isSGXApproved(Totals)
-    transitionNext
-  {
-    uint[2] memory sgxBalances;
-    sgxBalances[0] = sgxSimulator.currentBalance(0);
-    sgxBalances[1] = sgxSimulator.currentBalance(1);
-    state.finalBalance[initiator] = uint(sgxBalances[0]);
-    state.finalBalance[counterpart] = uint(sgxBalances[1]);
-  }
+	}
 
   // A helper function to get all the information we want to display in
   // the front-end
@@ -415,37 +392,5 @@ contract Deposit {
       state.stage
     );
   }
-
-}
-
-
-/**
- * This contract simulates the behavior of a SGX. It stores the balances of both
- * parties, that are updated during the time the payment channel is open and in
- * the closing of the payment channel it supplies that information to the
- * DepositContract.
- */
-contract SGXSimulator {
-
-  /**
-   * Initialized to 0
-   * initiator's balance is currentBalance[0]
-   * and counterpart's balance is currentBalance[1]
-   */
-	uint[2] public currentBalance;
-
-	function setInitiatorBalance(uint initiatorBalance) public {
-	    currentBalance[0] = initiatorBalance;
-	}
-
-    function setCounterpartBalance(uint counterpartBalance) public {
-	    currentBalance[1] = counterpartBalance;
-	}
-
-	function setBalances(uint initiatorBalance, uint counterpartBalance)
-	public {
-		setInitiatorBalance(initiatorBalance);
-		setCounterpartBalance(counterpartBalance);
-	}
 
 }
