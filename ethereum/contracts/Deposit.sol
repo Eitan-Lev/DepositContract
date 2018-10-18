@@ -1,6 +1,5 @@
 pragma solidity ^0.4.17;//for keccak256 and security issues
 
-
 /**
 * A contract used to create Deposit contracts. This contract can be deployed
 * once and any user that wants to initiate a Deposit contract can access it.
@@ -109,6 +108,7 @@ contract Deposit {
 	address public counterpart;
 
 	address public SgxAddress;
+    SGXSimulator public sgxSimulator;
 
 	bool public isKeySet = false;
 
@@ -177,10 +177,11 @@ contract Deposit {
 	}
 
   modifier isSGXApproved(uint[2] Totals) {
-    SGXContract sgxContract = SGXContract(SgxAddress);
-    uint[2] memory sgxBalances = sgxContract.getBalances();
-    require(sgxBalances[0] == Totals[0], "Initiator balances does not match!");
-    require(sgxBalances[1] == Totals[1], "Counterpart balances does not match!");
+    uint[2] memory sgxBalances;
+    sgxBalances[0] = sgxSimulator.currentBalance(0);
+    sgxBalances[1] = sgxSimulator.currentBalance(1);
+    require(sgxBalances[0] == Totals[0], "Initiator balance does not match!");
+    require(sgxBalances[1] == Totals[1], "Counterpart balance does not match!");
     _;
   }
 
@@ -374,6 +375,7 @@ contract Deposit {
 			state.stage = Stage(uint(state.stage) - 1);//revert stage
 			SgxAddress = 0;
 		}
+    sgxSimulator = SGXSimulator(SgxAddress);
 		return isKeySet;
 	}
 
@@ -397,8 +399,9 @@ contract Deposit {
     isSGXApproved(Totals)
     transitionNext
   {
-    SGXContract sgxContract = SGXContract(SgxAddress);
-    uint[2] memory sgxBalances = sgxContract.getBalances();
+    uint[2] memory sgxBalances;
+    sgxBalances[0] = sgxSimulator.currentBalance(0);
+    sgxBalances[1] = sgxSimulator.currentBalance(1);
     state.finalBalance[initiator] = uint(sgxBalances[0]);
     state.finalBalance[counterpart] = uint(sgxBalances[1]);
   }
@@ -416,15 +419,20 @@ contract Deposit {
 }
 
 
+/**
+ * This contract simulates the behavior of a SGX. It stores the balances of both
+ * parties, that are updated during the time the payment channel is open and in
+ * the closing of the payment channel it supplies that information to the
+ * DepositContract.
+ */
+contract SGXSimulator {
 
-contract SGXContract {
-
-    /**
-     * Initialized to 0
-     * initiator's balance is currentBalance[0]
-     * and counterpart's balance is currentBalance[1]
-     */
-	uint[2] currentBalance;
+  /**
+   * Initialized to 0
+   * initiator's balance is currentBalance[0]
+   * and counterpart's balance is currentBalance[1]
+   */
+	uint[2] public currentBalance;
 
 	function setInitiatorBalance(uint initiatorBalance) public {
 	    currentBalance[0] = initiatorBalance;
@@ -438,10 +446,6 @@ contract SGXContract {
 	public {
 		setInitiatorBalance(initiatorBalance);
 		setCounterpartBalance(counterpartBalance);
-	}
-
-	function getBalances() public view returns (uint[2]) {
-	    return currentBalance;
 	}
 
 }
