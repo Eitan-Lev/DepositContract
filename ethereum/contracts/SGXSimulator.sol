@@ -1,13 +1,13 @@
 pragma solidity ^0.4.17;//for keccak256 and security issues
 
-contract SGXContract {
+contract SGXSimulator {
 
     /**
      * Initialized to 0
      * initiator's balance is currentBalance[0]
      * and counterpart's balance is currentBalance[1]
      */
-	uint[2] currentBalance;
+	uint[2] public currentBalance;
 
 	function setInitiatorBalance(uint initiatorBalance) public {
 	    currentBalance[0] = initiatorBalance;
@@ -21,10 +21,6 @@ contract SGXContract {
 	public {
 		setInitiatorBalance(initiatorBalance);
 		setCounterpartBalance(counterpartBalance);
-	}
-
-	function getBalances() public view returns (uint[2]) {
-	    return currentBalance;
 	}
 
 }
