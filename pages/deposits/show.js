@@ -80,7 +80,7 @@ class DepositShow extends Component {
 	}
 
 	renderCards() {
-		const {
+		var {
 			initiatorAddress,
 			counterpartAddress,
 			sgxAddress,
@@ -99,13 +99,13 @@ class DepositShow extends Component {
 				style: { overflowWrap: 'break-word' }
 			},
 			{
-				header: counterpartAddress,
+				header: counterpartAddress == 0 ? 'Not Set' : counterpartAddress,
 				meta: 'Address of counterpart',
 				description: 'The counterpart is the other party of the contract',
 				style: { overflowWrap: 'break-word' }
 			},
 			{
-				header: sgxAddress,
+				header: sgxAddress == 0 ? 'Not Set' : sgxAddress,
 				meta: 'Address of SGX',
 				description:
 					'The address, or public key, of the SGX that both sides approved',

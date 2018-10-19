@@ -6,7 +6,8 @@ import {
 	Message,
 	Button,
 	Segment,
-	Label
+	Label,
+	Dropdown
 } from 'semantic-ui-react';
 import Deposit from '../ethereum/deposit';
 import web3 from '../ethereum/web3';
@@ -16,7 +17,8 @@ class AddDepositForm extends Component {
 	state = {
 		value: '',
 		errorMessage: '',
-		loading: false
+		loading: false,
+		currency: 'wei'
 	};
 
 	onSubmit = async event => {
@@ -27,9 +29,14 @@ class AddDepositForm extends Component {
 
 		try {
 			const accounts = await web3.eth.getAccounts();
+			const valueInwei =
+				this.state.currency == 'wei'
+					? this.state.value
+					: web3.utils.toWei(this.state.value, 'ether');
+
 			await deposit.methods.addDeposit().send({
 				from: accounts[0],
-				value: this.state.value
+				value: valueInwei
 			});
 			Router.replaceRoute(`/deposits/${this.props.address}`);
 		} catch (err) {
@@ -40,6 +47,11 @@ class AddDepositForm extends Component {
 	};
 
 	render() {
+		const options = [
+			{ key: 'wei', text: 'wei', value: 'wei' },
+			{ key: 'ether', text: 'ether', value: 'ether' }
+		];
+
 		return (
 			<Segment>
 				<Label attached="top" size="large">
@@ -50,7 +62,15 @@ class AddDepositForm extends Component {
 						<Input
 							value={this.state.value}
 							onChange={event => this.setState({ value: event.target.value })}
-							label="wei"
+							label={
+								<Dropdown
+									onChange={(e, data) => {
+										this.setState({ currency: data.value });
+									}}
+									defaultValue="wei"
+									options={options}
+								/>
+							}
 							labelPosition="right"
 							placeholder="insert the amount of wei you wish to deposit"
 						/>

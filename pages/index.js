@@ -53,6 +53,11 @@ class DepositIndex extends Component {
 		const deposits = await factory.methods
 			.getDepositContract(accounts[0])
 			.call();
+		{
+			/*
+        TODO: Check later if we need to add 'gas inside call'
+        */
+		}
 		this.setState({
 			addressSearched: false,
 			addressMetamask: true,
