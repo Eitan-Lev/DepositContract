@@ -4,7 +4,7 @@ Metamask account addresses of Amit:
 2) 0x2EEC49EAb23f2082a2876D249FCAEF306E490bEa
 
 Most updated factory address (saved in factory.js):
-0x021C9936D551f5c42b58dA2867FA5CD2fFed7DEb
+0xB01cDe6c95a088c1E7a15645d9C6Dbc0bd1367c8
 
 Most updated SGXContract address:
-0x1F28AC34Fa8f33f94075C79d677c43d92278D26e
+0xBFa3d88A1C5890741627D11bf9b1D99Da592E4aB

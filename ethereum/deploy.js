@@ -1,7 +1,7 @@
 const HDWalletProvider = require('truffle-hdwallet-provider');
 const Web3 = require('web3');
 const compiledFactory = require('./build/DepositFactory.json');
-const compiledSGXContract = require('./build/SGXContract.json');
+const compiledSGXContract = require('./build/SGXSimulator.json');
 
 const provider = new HDWalletProvider(
 	'balance husband family north leader small cloud word cause game helmet tube',

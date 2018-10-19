@@ -32,10 +32,6 @@ contract DepositFactory {
 		// which does not go well with return values
 	}
 
-	//function getDeployedDeposits() public view returns (address[]) {
-		//return deployedDepositsArray;
-	//}
-
 	/**
 	* getDepositContract
 	* Gets all the addresses of contracts created by 'creator'.
@@ -108,7 +104,7 @@ contract Deposit {
 	address public counterpart;
 
 	address public SgxAddress;
-    SGXSimulator public sgxSimulator;
+  SGXSimulator public sgxSimulator;
 
 	bool public isKeySet = false;
 
@@ -176,6 +172,7 @@ contract Deposit {
 		_;
 	}
 
+  /* TODO: Amit - Add documentation */
   modifier isSGXApproved(uint[2] Totals) {
     uint[2] memory sgxBalances;
     sgxBalances[0] = sgxSimulator.currentBalance(0);
@@ -189,7 +186,7 @@ contract Deposit {
 	 * nextStage
 	 * Moves the contract to the next stage, if possible and allowrd.
 	 * TODO: Amit - many mixed assertions and requirements. This function needs a
-	 * a bit re-factoring
+	 * a bit re-factoring. Remove requires in last version
 	 */
 	function nextStage() internal {
 		/* TODO: Amit - why both of them? */
@@ -295,17 +292,6 @@ contract Deposit {
 	}
 
 	/**
-	 * beforeStage
-	 * TODO: Amit - add documentation, consider removing
-	 */
-	/*function beforeStage(Stage endStage) internal view returns (bool) {
-		require(state.stage != Stage.Finished, "Assert fails");
-		assert(endStage != Stage.Finished);
-		Stage newEndStage = Stage(uint(endStage) + 1);
-		return betweenStages(Stage.InitialStage, newEndStage);
-	}*/
-
-	/**
 	 * betweenStages
 	 * TODO: Amit - add documentation, consider removing
 	 */
@@ -344,17 +330,20 @@ contract Deposit {
 		if (msg.sender == initiator) {
 			initiator.transfer(state.finalBalance[initiator]);
 			state.finalBalance[initiator] = 0;
+      state.currentDeposit[initiator] = 0;
 		} else if (msg.sender == counterpart) {
 			counterpart.transfer(state.finalBalance[counterpart]);
 			state.finalBalance[counterpart] = 0;
+      state.currentDeposit[counterpart] = 0;
 		} else {
 			return;//Do not continue to next step.
 		}
 		//If both sides drawed, reset contract
-    /** TODO maybe there is a prettier way to do it? asking if balance is 0 could be problematic */
 		if (state.finalBalance[initiator] == 0
 		    && state.finalBalance[counterpart] == 0)
 		{
+      assert(state.currentDeposit[initiator] == 0
+        && state.currentDeposit[counterpart] == 0);
 			factory.removeDeposit();
 			selfdestruct(initiator);//initiator gets leftovers
 		}
@@ -404,6 +393,8 @@ contract Deposit {
     sgxBalances[1] = sgxSimulator.currentBalance(1);
     state.finalBalance[initiator] = uint(sgxBalances[0]);
     state.finalBalance[counterpart] = uint(sgxBalances[1]);
+    state.currentDeposit[initiator] = state.finalBalance[initiator];
+    state.currentDeposit[counterpart] = state.finalBalance[counterpart];
   }
 
   // A helper function to get all the information we want to display in

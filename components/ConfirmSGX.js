@@ -14,7 +14,7 @@ import { Router } from '../routes';
 
 class SGXInsert extends Component {
 	state = {
-		sgxAddress: '',
+		SgxAddress: '',
 		errorMessage: '',
 		loading: false
 	};
@@ -27,7 +27,7 @@ class SGXInsert extends Component {
 
 		try {
 			const accounts = await web3.eth.getAccounts();
-			await deposit.methods.lockPublicSharedKey(this.state.SgxAdderss).send({
+			await deposit.methods.lockPublicSharedKey(this.state.SgxAddress).send({
 				from: accounts[0]
 			});
 			Router.replaceRoute(`/deposits/${this.props.address}`);
@@ -46,9 +46,9 @@ class SGXInsert extends Component {
 				</Label>
 				<Form onSubmit={this.onSubmit} error={!!this.state.errorMessage}>
 					<Form.Input
-						value={this.state.SgxAdderss}
+						value={this.state.SgxAddress}
 						onChange={event =>
-							this.setState({ SgxAdderss: event.target.value })
+							this.setState({ SgxAddress: event.target.value })
 						}
 						placeholder="Insert the address of the SGX to confirm it "
 					/>
