@@ -1,28 +1,24 @@
 import React, { Component } from 'react';
-import { Card, Grid, Button, Step } from 'semantic-ui-react';
+import { Card, Grid, Button, Step, Segment } from 'semantic-ui-react';
 import Layout from '../../components/Layout';
 import Deposit from '../../ethereum/deposit';
 import AddDepositForm from '../../components/AddDepositForm';
 import { Link } from '../../routes';
+import web3 from '../../ethereum/web3';
 
 class DepositShow extends Component {
 	state = {
-		createdCompleted: 'true',
-		counterpartCompleted: 'false',
-		keyCompleted: 'false',
-		openCompleted: 'false',
-		closedCompleted: 'false',
-		createdActive: 'true',
-		counterpartActive: 'false',
-		keyActive: 'false',
-		openActive: 'false',
-		closedActive: 'false'
+		userInitiator: false,
+		userCounterpart: false,
+		userOther: false
 	};
 
 	static async getInitialProps(props) {
 		//Accessing the contract for data
 		const deposit = Deposit(props.query.address); //the address of the actual deposit
 		const summary = await deposit.methods.getSummary().call();
+		const accounts = await web3.eth.getAccounts();
+
 		return {
 			depositAddress: props.query.address,
 			initiatorAddress: summary[0],
@@ -31,7 +27,10 @@ class DepositShow extends Component {
 			isKeySet: summary[3] ? 'True' : 'False',
 			initiatorBalance: summary[4],
 			counterpartBalance: summary[5],
-			contractStage: summary[6]
+			contractStage: summary[6],
+			userInitiator: accounts[0] == summary[0],
+			userCounterpart: accounts[0] == summary[1],
+			userOther: accounts[0] != summary[0] && accounts[0] != summary[1]
 		};
 	}
 
@@ -117,13 +116,17 @@ class DepositShow extends Component {
 				description: 'Have both sides decided on a key'
 			},
 			{
-				header: initiatorBalance,
+				header: this.props.userOther
+					? 'Only available to parties'
+					: initiatorBalance,
 				meta: "Initiator's balance (wei)",
 				description:
 					'How much money do the initiator currently have in the deposit?'
 			},
 			{
-				header: counterpartBalance,
+				header: this.props.userOther
+					? 'Only available to parties'
+					: counterpartBalance,
 				meta: "Counterpart's balance (wei)",
 				description:
 					'How much money do the counterpart currently have in the deposit?'
@@ -131,6 +134,57 @@ class DepositShow extends Component {
 		];
 
 		return <Card.Group items={items} />;
+	}
+
+	renderButtons() {
+		if (this.props.userInitiator) {
+			return (
+				<div>
+					<Link route={`/deposits/${this.props.depositAddress}/manage`}>
+						<a>
+							<Button color="green">Manage this contract as initiator</Button>
+						</a>
+					</Link>
+					<Grid.Row>
+						<Button disabled color="grey">
+							Manage this contract as counterpart
+						</Button>
+					</Grid.Row>
+				</div>
+			);
+		} else if (this.props.userCounterpart) {
+			return (
+				<div>
+					<Button disabled color="grey">
+						Manage this contract as initiator
+					</Button>
+					<Grid.Row>
+						<Link
+							route={`/deposits/${this.props.depositAddress}/manageCounterpart`}
+						>
+							<a>
+								<Button color="green">
+									Manage this contract as counterpart
+								</Button>
+							</a>
+						</Link>
+					</Grid.Row>
+				</div>
+			);
+		} else {
+			return (
+				<div>
+					<Button disabled color="grey">
+						Manage this contract as initiator
+					</Button>
+					<Grid.Row>
+						<Button disabled color="grey">
+							Manage this contract as counterpart
+						</Button>
+					</Grid.Row>
+				</div>
+			);
+		}
 	}
 
 	render() {
@@ -142,27 +196,9 @@ class DepositShow extends Component {
 						<Grid.Column width={10}>{this.renderCards()}</Grid.Column>
 						<Grid.Column width={6}>
 							<AddDepositForm address={this.props.depositAddress} />
-							<Grid.Row>
-								<Link route={`/deposits/${this.props.depositAddress}/manage`}>
-									<a>
-										<Button secondary>Manage this contract as initiator</Button>
-									</a>
-								</Link>
-								<Link
-									route={`/deposits/${
-										this.props.depositAddress
-									}/manageCounterpart`}
-								>
-									<a>
-										<Button color="yellow">
-											Manage this contract as counterpart
-										</Button>
-									</a>
-								</Link>
-							</Grid.Row>
+							<Grid.Row>{this.renderButtons()}</Grid.Row>
 						</Grid.Column>
 					</Grid.Row>
-
 					<Grid.Row>
 						<Grid.Column>{this.renderSteps()}</Grid.Column>
 					</Grid.Row>
