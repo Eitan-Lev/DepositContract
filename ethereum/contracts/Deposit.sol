@@ -14,6 +14,8 @@ contract DepositFactory {
 	mapping(address => address[]) public deployedDeposits;
 	uint feeValue = 1;
 
+	event newDepositCreation(address indexed _creator, address indexed _contract);
+
 	/**
 	* createDeposit
 	* Generates a new Deposit Contract. A fee has to be send to this function,
@@ -28,6 +30,7 @@ contract DepositFactory {
 		address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
 		(deployedDeposits[msg.sender]).push(newDeposit);
 		depositsCreators[newDeposit] = msg.sender;
+		emit newDepositCreation(msg.sender, newDeposit);
 		// Don't return anything since it's payable,
 		// which does not go well with return values
 	}
@@ -400,9 +403,16 @@ contract Deposit {
   // A helper function to get all the information we want to display in
   // the front-end
   function getSummary() public view returns (address, address, address, bool, uint, uint, Stage) {
+	uint initiatorDeposit = state.currentDeposit[initiator];
+	uint counterpartDeposit = state.currentDeposit[counterpart];
+	if (msg.sender != initiator && msg.sender != counterpart) {
+		initiatorDeposit = 0;
+		counterpartDeposit = 0;
+	}
     return (
       initiator, counterpart, SgxAddress, isKeySet,
-      state.currentDeposit[initiator], state.currentDeposit[counterpart],
+	initiatorDeposit, counterpartDeposit,
+      //state.currentDeposit[initiator], state.currentDeposit[counterpart],
       state.stage
     );
   }
