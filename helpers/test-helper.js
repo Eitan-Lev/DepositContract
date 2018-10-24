@@ -40,7 +40,8 @@ module.exports = {
 	//},
 	//async setFinalState(Totals, v_decimal, r, s, account) {
 	async setFinalState(Totals, TotalsBytes, v_decimal, r, s, account) {
-		res = await deposit.methods.setFinalState(Totals, TotalsBytes, v_decimal, r, s)
+		// res = await deposit.methods.setFinalState(Totals, TotalsBytes, v_decimal, r, s)
+		res = await deposit.methods.setFinalState(Totals)//Since SGX simulator changed
 			.send({
 				from: account,
 				gas: '2000000'

@@ -1,0 +1,10 @@
+# exclude everything except what we specifically say (work as white list)
+#/*
+
+# Whitelisted folders and files
+!/Truffle/truffle.js
+!/Truffle/truffle-config.js
+
+# Allow contracts to be tracked but not .json files of them
+/build
+/contracts/Deposit.sol

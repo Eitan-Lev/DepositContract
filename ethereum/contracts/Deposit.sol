@@ -8,7 +8,8 @@ contract DepositFactory {
 
 	//Using mappings means we can't know simply how many contracts exist.
 	//Also, there is no way to iterate over all contracts.
-	//Creator => Contract because creator has to know somehow what is the address of hes contracts.
+	//Creator => Contract because creator has to know somehow what
+	// is the address of hes contracts.
 	mapping(address => address) public depositsCreators;
 	//Contract => Creator to be able to destroy cotnracts.
 	mapping(address => address[]) public deployedDeposits;
@@ -25,14 +26,14 @@ contract DepositFactory {
 	function createDeposit() public payable {
 		require(msg.value >= feeValue, "Not enough money sent.");
 		//initialized to 0
-		uint initialDeposit;
+		uint initialDeposit = 0;
 		if (msg.value > feeValue) initialDeposit = msg.value - feeValue;
 		address newDeposit = (new Deposit).value(initialDeposit)(msg.sender);
 		(deployedDeposits[msg.sender]).push(newDeposit);
 		depositsCreators[newDeposit] = msg.sender;
 		emit newDepositCreation(msg.sender, newDeposit);
 		// Don't return anything since it's payable,
-		// which does not go well with return values
+		// which does not go well with return values.
 	}
 
 	/**
@@ -49,7 +50,11 @@ contract DepositFactory {
 	* Gets the address of the creator of 'depositContract'.
 	* returns 0x000... if creator does not exist
 	*/
-	function getDepositContractCreator(address depositContract) public view returns (address) {
+	function getDepositContractCreator(address depositContract)
+		public
+		view
+		returns (address)
+	{
 		return depositsCreators[depositContract];
 	}
 
@@ -60,9 +65,11 @@ contract DepositFactory {
 	* TODO: This function requires more changes
 	*/
 	function removeDeposit() public {
-		//Currently the remove causes all contracts of a creator to be removed (undesired behaviour)
-		delete deployedDeposits[(depositsCreators[msg.sender])];//Only relevant if sent by a contract, so need to restrict
-		delete depositsCreators[msg.sender];//Only relevant if sent by a contract, so need to restrict
+		//Currently the remove causes all contracts of a creator
+		// to be removed (undesired behaviour).
+		//Only relevant if sent by a contract, so need to restrict:
+		delete deployedDeposits[(depositsCreators[msg.sender])];
+		delete depositsCreators[msg.sender];
 	}
 }
 
@@ -95,7 +102,8 @@ contract Deposit {
 		mapping(address => uint) initialBalance;
 		mapping(address => uint) currentDeposit;
 		mapping(address => uint) finalBalance;
-    bool finalBalanceSet; /*TODO: Not needed, but removing causes bug */
+		/*TODO: Not needed, but removing causes bug: */
+    bool finalBalanceSet;
 		Stage stage;
 	}
 
@@ -111,13 +119,18 @@ contract Deposit {
 
 	bool public isKeySet = false;
 
+	event depositContractClosed(
+		address indexed _account,
+		address indexed _sgxAddress,
+		uint indexed _extraBalance);
+
 	/**
 	* constructor
 	* Called by a DepositFactory and sets all the fields for the new Deposit
 	* contract. An amount of ether can be passed to the account and it will be
 	* treated as if it was ether that the initiator passed to the contract.
 	*/
-	constructor(address creator) public payable transitionNext {
+	constructor(address creator) public payable transitionNext() {
 		factory = DepositFactory(msg.sender);
 		initiator = creator;
 		State memory newState = State({
@@ -164,18 +177,30 @@ contract Deposit {
 		_;
 	}
 
-	/* TODO: Amit - Need explanation here */
-	//modifier isSigned(uint[2] Totals, uint8 v, bytes32 r, bytes32 s)
-	modifier isSigned(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s)
+	/**
+	 * Modifier - Verify that TotalsBytes is signed by known SgxAddress.
+	 * Also, verify that keccak256 of Totals is the given hash.
+	 * This is a mitigation to check signature of Sgx from outside.
+	 */
+	modifier isSigned(
+		uint[2] Totals,
+		bytes32 TotalsBytes,
+		uint8 v,
+		bytes32 r,
+		bytes32 s)
 	{
-		require(sha3(Totals) == TotalsBytes, "Sha3 of totals does not match given Sha3");
+		require(keccak256(abi.encodePacked(Totals)) == TotalsBytes,
+			"Sha3 of totals does not match given Sha3");
 		bytes memory prefix = "\x19Ethereum Signed Message:\n32";
 		bytes32 msgHash = keccak256(abi.encodePacked(prefix, TotalsBytes));
-		require(ecrecover(msgHash, v, r, s) == SgxAddress, "Verify signature failed");
+		require(ecrecover(msgHash, v, r, s) == SgxAddress,
+			"Verify signature failed");
 		_;
 	}
 
-  /* TODO: Amit - Add documentation */
+	/**
+	 * Modifier - Verify that Totals value is what the Sgx determined.
+	 */
   modifier isSGXApproved(uint[2] Totals) {
     uint[2] memory sgxBalances;
     sgxBalances[0] = sgxSimulator.currentBalance(0);
@@ -185,19 +210,26 @@ contract Deposit {
     _;
   }
 
+	// Modifier - Makes sure we are in the stage we assume
+	modifier verifyAtStage(Stage _stage) {
+		require(atStage(_stage), getErrorMsgAccordingToStage(state.stage));
+		_;
+	}
+
+	// Modifier - Transition into next conract stage
+	modifier transitionNext() {
+		_;
+		nextStage();
+	}
+
 	/**
 	 * nextStage
-	 * Moves the contract to the next stage, if possible and allowrd.
-	 * TODO: Amit - many mixed assertions and requirements. This function needs a
-	 * a bit re-factoring. Remove requires in last version
+	 * Moves the contract to the next stage, if possible and allowed.
 	 */
 	function nextStage() internal {
-		/* TODO: Amit - why both of them? */
-		require(state.stage != Stage.Finished, "Assert fails");
 		assert(state.stage != Stage.Finished);
 		Stage _stage = state.stage;
 		state.stage = Stage(uint(_stage) + 1);
-		require(state.stage != Stage.Finished, "Assert fails");
 		assert(uint(state.stage) <= uint(Stage.Finished));
 	}
 
@@ -205,7 +237,11 @@ contract Deposit {
 	 * getErrorMsgAccordingToStage
 	 * Returns a string describing the current stage of the account.
 	 */
-	function getErrorMsgAccordingToStage(Stage _stage) internal pure returns (string) {
+	function getErrorMsgAccordingToStage(Stage _stage)
+		internal
+		pure
+		returns (string)
+	{
 		if (_stage == Stage.InitialStage) {
 			return "InitialStage";
 		} else if (_stage == Stage.NoCounterpart) {
@@ -225,25 +261,11 @@ contract Deposit {
 		}
 	}
 
-	// Modifier - Makes sure we are in the stage we assume
-	modifier verifyAtStage(Stage _stage) {
-		require(atStage(_stage), getErrorMsgAccordingToStage(state.stage));
-		_;
-	}
-
-	/* TODO: Amit - what is this modifier for?. Can we make it prettier?*/
-	// Modifier - Not used for modifying, but more to change the stage into the
-	// the next one
-	modifier transitionNext() {
-		_;
-		nextStage();
-	}
-
 	/**
 	 * viewCurrentDeposit
 	 * Returns a value corresponding to the party's current deposit.
 	 */
-	function viewCurrentDeposit(address party) public view restricted returns (uint) {
+	function viewCurrentDeposit(address party) public view returns (uint) {
 		return state.currentDeposit[party];
 	}
 
@@ -253,7 +275,7 @@ contract Deposit {
 	 * array[0] is the deposit of the initiator and array[1] is deposit of the
 	 * counterpart.
 	 */
-	function viewCurrentDeposit() public view restricted returns (uint[]) {
+	function viewCurrentDeposit() public view returns (uint[]) {
 		uint[] memory balance = new uint[](2);
 		balance[0] = state.currentDeposit[initiator];
 		balance[1] = state.currentDeposit[counterpart];
@@ -296,7 +318,6 @@ contract Deposit {
 
 	/**
 	 * betweenStages
-	 * TODO: Amit - add documentation, consider removing
 	 */
 	function betweenStages(Stage beginStage, Stage endStage)
 		internal
@@ -347,6 +368,7 @@ contract Deposit {
 		{
       assert(state.currentDeposit[initiator] == 0
         && state.currentDeposit[counterpart] == 0);
+			emit depositContractClosed(msg.sender, SgxAddress, address(this).balance);
 			factory.removeDeposit();
 			selfdestruct(initiator);//initiator gets leftovers
 		}
@@ -359,8 +381,11 @@ contract Deposit {
 	 * earlier by the initiator. Return value indicates if the lock succeeded.
 	 * After a successful call the contract moves to the next stage - PaymentChannelOpen.
 	 */
-	function lockPublicSharedKey(address _sgx) public restrictedAccess(Party.Counterpart)
-		verifyAtStage(Stage.SettingKey) transitionNext returns (bool){
+	function lockPublicSharedKey(address _sgx)
+		public
+		restrictedAccess(Party.Counterpart)
+		verifyAtStage(Stage.SettingKey) transitionNext
+	{
 		if (_sgx == SgxAddress) {
 			isKeySet = true;
 		} else {
@@ -368,22 +393,28 @@ contract Deposit {
 			SgxAddress = 0;
 		}
     sgxSimulator = SGXSimulator(SgxAddress);
-		return isKeySet;
 	}
 
 	/* TODO: Amit - add documentation */
-	//function setFinalState(uint[2] Totals, uint8 v, bytes32 r, bytes32 s)
-	/* function setFinalState(uint[2] Totals, bytes32 TotalsBytes, uint8 v, bytes32 r, bytes32 s)
+	function setFinalState(
+		uint[2] Totals,
+		bytes32 TotalsBytes,
+		uint8 v,
+		bytes32 r,
+		bytes32 s
+		)
 		public
 		restricted
 		verifyAtStage(Stage.PaymentChannelOpen)
 		isSigned(Totals, TotalsBytes, v, r, s)
-		//isSigned(Totals, v, r, s)
 		transitionNext
 	{
 		state.finalBalance[initiator] = uint(Totals[0]);
 		state.finalBalance[counterpart] = uint(Totals[1]);
-	} */
+		state.currentDeposit[initiator] = state.finalBalance[initiator];
+    state.currentDeposit[counterpart] = state.finalBalance[counterpart];
+	}
+
   function setFinalState(uint[2] Totals)
     public
     restricted
@@ -405,14 +436,9 @@ contract Deposit {
   function getSummary() public view returns (address, address, address, bool, uint, uint, Stage) {
 	uint initiatorDeposit = state.currentDeposit[initiator];
 	uint counterpartDeposit = state.currentDeposit[counterpart];
-	if (msg.sender != initiator && msg.sender != counterpart) {
-		initiatorDeposit = 0;
-		counterpartDeposit = 0;
-	}
-    return (
+  return (
       initiator, counterpart, SgxAddress, isKeySet,
-	initiatorDeposit, counterpartDeposit,
-      //state.currentDeposit[initiator], state.currentDeposit[counterpart],
+			initiatorDeposit, counterpartDeposit,
       state.stage
     );
   }
