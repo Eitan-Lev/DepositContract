@@ -1,5 +1,13 @@
 import React, { Component } from 'react';
-import { Card, Button, Grid, Input, Divider, Form } from 'semantic-ui-react';
+import {
+	Card,
+	Button,
+	Grid,
+	Input,
+	Divider,
+	Form,
+	Icon
+} from 'semantic-ui-react';
 import factory from '../ethereum/factory';
 import Layout from '../components/Layout';
 import { Link } from '../routes';
@@ -65,9 +73,22 @@ class DepositIndex extends Component {
 				return {
 					header: address,
 					description: (
-						<Link route={`/deposits/${address}`}>
-							<a>View Deposit</a>
-						</Link>
+						<Grid>
+							<Grid.Row columns={2}>
+								<Grid.Column>
+									<Link route={`/deposits/${address}`}>
+										<a>View Deposit</a>
+									</Link>
+								</Grid.Column>
+								<Grid.Column textAlign="right">
+									<Link
+										route={`https://rinkeby.etherscan.io/address/${address}`}
+									>
+										<a>View Contract on Etherscan</a>
+									</Link>
+								</Grid.Column>
+							</Grid.Row>
+						</Grid>
 					),
 					fluid: true
 				};
