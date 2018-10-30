@@ -18,3 +18,7 @@
 # Allow contracts to be tracked but not .json files of them
 !/ethereum
 /ethereum/build
+
+# Truffle stuff:
+!/Truffle
+!/Truffle/.gitignore
