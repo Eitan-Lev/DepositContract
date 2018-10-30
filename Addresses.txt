@@ -3,7 +3,7 @@ Metamask account addresses of Amit:
 1) 0x5AF1585D3B6B49FC265B5eEc6Bc1A55A5Ce93E2e
 2) 0x2EEC49EAb23f2082a2876D249FCAEF306E490bEa
 
-Metamask account addresses of Amit:
+Metamask account addresses of Eitan:
 1) 0x9De713F4D5666383346D41042E0673639e638736
 
 Most updated factory address (saved in factory.js):
