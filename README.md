@@ -1,5 +1,5 @@
 # Smart Contract for Payment Channels over Ethereum
-* EnviormentOps contains the instructions for building the environment after pulling the repository. There is no need to do these steps more than once on each computer.
+* EnvironmentOps contains the instructions for building the environment after pulling the repository. There is no need to do these steps more than once on each computer.
 * Do not save any private keys on this repository.
 
 ## Installation Instructions
@@ -57,4 +57,4 @@ npm run dev
 ## Front End interaction:
 Wait until the command line tells you that compilation was successful.
 1. cd back into root directory (not sure if this is a must).
-1. Open chrome (or any other browser with metamask) and enter localhost:3000
+2. Open chrome (or any other browser with metamask) and enter localhost:3000
