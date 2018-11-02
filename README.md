@@ -1,6 +1,24 @@
 # Smart Contract for Payment Channels over Ethereum
-* EnvironmentOps contains the instructions for building the environment after pulling the repository. There is no need to do these steps more than once on each computer.
+* Pull the repository and perform the installation steps. There is no need to do these steps more than once on each computer.
 * Do not save any private keys on this repository.
+* Enjoy!
+
+## Table of Contents
+
+- [Background](#background)
+- [Installation Instructions](#installation-instructions)
+- [Compilation and Deployment Instructions](#compilation-and-deployment-instructions)
+- [Testing](#testing)
+- [Front End interaction](#front-end-interaction)
+- [Maintainers](#maintainers)
+- [License](#license)
+- [Example- In Development](#example)
+- [Documentation- In Development](#documentation)
+- [Development- In Development](#development)
+
+## Background
+
+Relying on the notion of the payment channels using Ethereum, this project implements the concept by incorperating SGX (or any equivalent third party abilities). As a result, allowing usage of payment channels over Ethereum while minimizing gas costs and transaction amounts on the Blockchain.
 
 ## Installation Instructions
 1. Download the latest node.js from: https://nodejs.org/en/download/
@@ -58,3 +76,23 @@ npm run dev
 Wait until the command line tells you that compilation was successful.
 1. cd back into root directory (not sure if this is a must).
 2. Open chrome (or any other browser with metamask) and enter localhost:3000
+
+## Maintainers
+[@eitanlev](https://github.com/Eitan-Lev)
+[@amitw](https://github.com/Amit-Weiss)
+
+## License
+Solidity is licensed under [GNU General Public License v3.0](https://github.com/ethereum/solidity/blob/develop/LICENSE.txt)
+
+
+## Example
+
+In Development
+
+## Documentation
+
+In Development
+
+## Development
+
+In Development
