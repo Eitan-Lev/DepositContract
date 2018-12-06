@@ -1,0 +1,39 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+pool:
+  vmImage: 'Ubuntu 16.04'
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script: |
+    npm install
+    #npm install truffle@beta --save-dev
+  displayName: 'npm install'
+  
+# Insert this before running Truffle Test. This will set the reporter to output junit XML
+- script: |
+    sed -i -e 's/reporter: "spec"/reporter: "mocha-junit-reporter"/g' Truffle/truffle.js
+  displayName: 'configure mocha to output junit'
+  
+- script: |
+    npx ganache-cli &
+    sleep 5
+  displayName: 'ganache start'
+  
+- script: |
+    cd Truffle
+    npx truffle compile
+    npx truffle test
+  displayName: 'truffle compile & test'
+  
+# Put this after running Truffle Test. Publishes Test Results in Azure DevOps
+- task: PublishTestResults@2
+  condition: always()
+  inputs:
+    testResultsFormat: 'JUnit'
+    testResultsFiles: '**/TEST-*.xml' 
