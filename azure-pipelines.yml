@@ -29,8 +29,16 @@ steps:
     cd Truffle
     ln -s ../ethereum/contracts/Deposit.sol contracts/Deposit.sol
     npx truffle compile
+    #npx truffle test
+  #displayName: 'truffle compile & test'
+  displayName: 'truffle compile'
+
+- script: |
+    #cd Truffle
+    #ln -s ../ethereum/contracts/Deposit.sol contracts/Deposit.sol
+    #npx truffle compile
     npx truffle test
-  displayName: 'truffle compile & test'
+  displayName: 'truffle test'
   
 # Put this after running Truffle Test. Publishes Test Results in Azure DevOps
 - task: PublishTestResults@2
