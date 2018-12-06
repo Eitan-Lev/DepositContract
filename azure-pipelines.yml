@@ -34,7 +34,7 @@ steps:
   displayName: 'truffle compile'
 
 - script: |
-    #cd Truffle
+    cd Truffle
     #ln -s ../ethereum/contracts/Deposit.sol contracts/Deposit.sol
     #npx truffle compile
     npx truffle test
